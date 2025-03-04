@@ -1,26 +1,25 @@
 ---
 
-- block:
-    - when: dokuwiki_enabled | bool
+- name: Install DokuWiki
+  tags:
+    - setup-all
+    - setup-dokuwiki
+    - install-all
+    - install-dokuwiki
+  block:
+    - name: Run DokuWiki validation tasks
+      when: dokuwiki_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
-  tags:
-    - setup-all
-    - setup-dokuwiki
-    - install-all
-    - install-dokuwiki
 
-- block:
-    - when: dokuwiki_enabled | bool
+    - name: Run DokuWiki installation tasks
+      when: dokuwiki_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
-  tags:
-    - setup-all
-    - setup-dokuwiki
-    - install-all
-    - install-dokuwiki
 
-- block:
-    - when: not dokuwiki_enabled | bool
-      ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
+- name: Uninstall DokuWiki
   tags:
     - setup-all
     - setup-dokuwiki
+  block:
+    - name: Run DokuWiki uninstallation tasks
+      when: not dokuwiki_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"

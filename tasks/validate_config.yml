@@ -14,7 +14,8 @@
       Dokuwiki can currently only be hosted at the base path (`/`), not at a subpath like `{{ dokuwiki_path_prefix }}`).
   when: "dokuwiki_path_prefix != '/'"
 
-- when: dokuwiki_container_labels_traefik_enabled | bool
+- name: Validate DokuWiki Traefik configuration
+  when: dokuwiki_container_labels_traefik_enabled | bool
   block:
     - name: Fail if required dokuwiki Traefik settings not defined
       ansible.builtin.fail:
@@ -23,3 +24,12 @@
       when: "vars[item] == ''"
       with_items:
         - dokuwiki_container_labels_traefik_hostname
+
+    # We ensure it doesn't end with a slash, because we handle both (slash and no-slash).
+    # Knowing that `dokuwiki_container_labels_traefik_path_prefix` does not end with a slash
+    # ensures we know how to set these routes up without having to do "does it end with a slash" checks elsewhere.
+    - name: Fail if dokuwiki_container_labels_traefik_path_prefix ends with a slash
+      ansible.builtin.fail:
+        msg: >-
+          dokuwiki_container_labels_traefik_path_prefix (`{{ dokuwiki_container_labels_traefik_path_prefix }}`) must either be `/` or not end with a slash (e.g. `/dokuwiki`).
+      when: "dokuwiki_container_labels_traefik_path_prefix != '/' and dokuwiki_container_labels_traefik_path_prefix[-1] == '/'"

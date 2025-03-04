@@ -8,14 +8,15 @@ dokuwiki_identifier: dokuwiki
 dokuwiki_version: 2024-02-06b
 
 dokuwiki_hostname: ''
-dokuwiki_path_prefix: /
 
+# Hosting at a subpath is not supported yet by upstream docker image. dokucwiki_path_prefix must be `/`.
+dokuwiki_path_prefix: /
 
 dokuwiki_uid: ''
 dokuwiki_gid: ''
 
-dokuwiki_systemd_required_services_list: "{{ dokuwiki_systemd_required_services_list_default + dokuwiki_systemd_required_services_list_auto + dokuwiki_systemd_required_services_list_custom }}"
-dokuwiki_systemd_required_services_list_default: ['docker.service']
+dokuwiki_systemd_required_services_list: "{{ (dokuwiki_systemd_required_services_list_default + dokuwiki_systemd_required_services_list_auto + dokuwiki_systemd_required_services_list_custom) | unique }}"
+dokuwiki_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
 dokuwiki_systemd_required_services_list_auto: []
 dokuwiki_systemd_required_services_list_custom: []
 
@@ -31,17 +32,12 @@ dokuwiki_php_uploadlimit: 128M
 dokuwiki_php_memorylimit: 256M
 dokuwiki_php_timezone: UTC
 
-# Controls whether the dokuwiki container exposes its HTTP port (tcp/80 in the container).
-#
-# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:8080"), or empty string to not expose.
-dokuwiki_container_http_host_bind_port: ""
-
 # dokuwiki_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
 # See `../templates/labels.j2` for details.
 #
 # To inject your own other container labels, see `dokuwiki_container_labels_additional_labels`.
 dokuwiki_container_labels_traefik_enabled: true
-dokuwiki_container_labels_traefik_docker_network: ''
+dokuwiki_container_labels_traefik_docker_network: "{{ dokuwiki_container_network }}"
 dokuwiki_container_labels_traefik_hostname: "{{ dokuwiki_hostname }}"
 
 # The path prefix must either be `/` or not end with a slash (e.g. `/ip`).
@@ -51,12 +47,6 @@ dokuwiki_container_labels_traefik_priority: 0
 dokuwiki_container_labels_traefik_entrypoints: web-secure
 dokuwiki_container_labels_traefik_tls: "{{ dokuwiki_container_labels_traefik_entrypoints != 'web' }}"
 dokuwiki_container_labels_traefik_tls_certResolver: default  # noqa var-naming
-
-# Controls which additional headers to attach to all HTTP requests.
-# To add your own custom request headers, use `dokuwiki_container_labels_traefik_additional_response_headers_custom`
-dokuwiki_container_labels_traefik_additional_request_headers: "{{ dokuwiki_container_labels_traefik_additional_request_headers_auto | combine(dokuwiki_container_labels_traefik_additional_request_headers_custom) }}"
-dokuwiki_container_labels_traefik_additional_request_headers_auto: |
-dokuwiki_container_labels_traefik_additional_request_headers_custom: {}
 
 # Controls which additional headers to attach to all HTTP responses.
 # To add your own custom response headers, use `dokuwiki_container_labels_traefik_additional_response_headers_custom`
@@ -94,7 +84,7 @@ dokuwiki_container_network: "{{ dokuwiki_identifier }}"
 
 # A list of additional container networks that the container would be connected to.
 # The playbook does not create these networks, so make sure they already exist.
-dokuwiki_container_additional_networks: "{{ dokuwiki_container_additional_networks_auto + dokuwiki_container_additional_networks_custom }}"
+dokuwiki_container_additional_networks: "{{ (dokuwiki_container_additional_networks_auto + dokuwiki_container_additional_networks_custom) | unique }}"
 dokuwiki_container_additional_networks_auto: []
 dokuwiki_container_additional_networks_custom: []
 

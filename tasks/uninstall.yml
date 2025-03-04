@@ -5,7 +5,8 @@
     path: "{{ devture_systemd_docker_base_systemd_path }}/{{ dokuwiki_identifier }}.service"
   register: dokuwiki_service_stat
 
-- when: dokuwiki_service_stat.stat.exists | bool
+- name: Uninstall DokuWiki systemd services and files
+  when: dokuwiki_service_stat.stat.exists | bool
   block:
     - name: Ensure dokuwiki systemd service is stopped
       ansible.builtin.service:
