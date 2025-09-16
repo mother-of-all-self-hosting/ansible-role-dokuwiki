@@ -9,7 +9,7 @@ dokuwiki_version: 2025-05-14b
 
 dokuwiki_hostname: ''
 
-# Hosting at a subpath is not supported yet by upstream docker image. dokucwiki_path_prefix must be `/`.
+# Hosting at a subpath is not supported yet by upstream docker image. dokuwiki_path_prefix must be `/`.
 dokuwiki_path_prefix: /
 
 dokuwiki_uid: ''
