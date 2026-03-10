@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 shukon
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # Dokuwiki Ansible role
 
 This is an [Ansible](https://www.ansible.com/) role which installs [Dokuwiki](https://dokuwiki.org) to run as a [Docker](https://www.docker.com/) container.

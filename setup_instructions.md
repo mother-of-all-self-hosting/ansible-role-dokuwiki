@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 shukon
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # dokuwiki
 
 [Dokuwiki](https://dokuwiki.org/) is a common wiki engine that does not require a database.
