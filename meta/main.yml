@@ -1,10 +1,10 @@
 ---
 galaxy_info:
-  author: Suguru Hirahara
-  company: progressiv
-  role_name: actual
-  namespace: progressiv
-  description: Actual
+  author: shukon
+  company: shukon
+  role_name: dokuwiki
+  namespace: mash
+  description: Dokuwiki
   platforms:
     - name: Debian
       versions:
