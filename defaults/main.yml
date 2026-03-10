@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-# Project source code URL: https://github.com/dokuwiki/docker
+# Project source code URL: https://github.com/dokuwiki/dokuwiki
 
 dokuwiki_enabled: true
 
@@ -16,8 +16,7 @@ dokuwiki_identifier: dokuwiki
 dokuwiki_base_path: "/{{ dokuwiki_identifier }}"
 dokuwiki_data_path: "{{ dokuwiki_base_path }}/data"
 
-# renovate: datasource=docker depName=dokuwikibudget/dokuwiki-server versioning=semver
-dokuwiki_version: 26.3.0
+dokuwiki_version: 2025-05-14b
 
 dokuwiki_uid: ""
 dokuwiki_gid: ""
@@ -35,7 +34,7 @@ dokuwiki_hostname: ""
 # technical limitations.
 dokuwiki_path_prefix: /
 
-dokuwiki_container_image: "{{ dokuwiki_container_image_registry_prefix }}dokuwikibudget/dokuwiki-server:{{ dokuwiki_container_image_tag }}"
+dokuwiki_container_image: "{{ dokuwiki_container_image_registry_prefix }}dokuwiki/dokuwiki:{{ dokuwiki_container_image_tag }}"
 dokuwiki_container_image_tag: "{{ dokuwiki_version }}"
 dokuwiki_container_image_registry_prefix: "{{ dokuwiki_container_image_registry_prefix_upstream }}"
 dokuwiki_container_image_registry_prefix_upstream: "{{ dokuwiki_container_image_registry_prefix_upstream_default }}"
