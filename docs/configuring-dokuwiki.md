@@ -18,11 +18,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Setting up DokuWiki
 
-This is an [Ansible](https://www.ansible.com/) role which installs [DokuWiki](https://dokuwikibudget.org) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
+This is an [Ansible](https://www.ansible.com/) role which installs [DokuWiki](https://dokuwiki.org/) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
-DokuWiki is a local-first personal finance tool.
+DokuWiki is a wiki software that does not require a database.
 
-See the project's [documentation](https://dokuwikibudget.org/docs/) to learn what DokuWiki does and why it might be useful to you.
+See the project's [documentation](https://www.dokuwiki.org/features) to learn what DokuWiki does and why it might be useful to you.
 
 ## Adjusting the playbook configuration
 
@@ -78,9 +78,13 @@ If you use the MASH playbook, the shortcut commands with the [`just` program](ht
 
 ## Usage
 
-After running the command for installation, DokuWiki becomes available at the specified hostname like `https://example.com`. To use it, open the URL on the browser and create an account.
+After running the command for installation, DokuWiki becomes available at the specified hostname like `https://example.com`.
+
+To get started, open the URL `https://example.com/install.php` with a web browser, and follow the set up wizard. **Note that the first registered user becomes an administrator automatically.**
 
 ## Troubleshooting
+
+FAQ is available on [this page](https://www.dokuwiki.org/faq).
 
 ### Check the service's logs
 
