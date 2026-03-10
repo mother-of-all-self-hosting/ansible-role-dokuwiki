@@ -41,6 +41,12 @@ dokuwiki_container_image_registry_prefix_upstream: "{{ dokuwiki_container_image_
 dokuwiki_container_image_registry_prefix_upstream_default: docker.io/
 dokuwiki_container_image_force_pull: "{{ dokuwiki_container_image.endswith(':latest') }}"
 
+dokuwiki_container_image_self_build: false
+dokuwiki_container_image_self_build_name: "dokuwiki/dokuwiki:{{ dokuwiki_container_image_self_build_repo_version }}"
+dokuwiki_container_image_self_build_repo: "https://github.com/dokuwiki/docker.git"
+dokuwiki_container_image_self_build_repo_version: "{{ dokuwiki_version if dokuwiki_version != 'latest' else 'main' }}"
+dokuwiki_container_image_self_build_src_files_path: "{{ dokuwiki_base_path }}/docker-src"
+
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 dokuwiki_container_network: "{{ dokuwiki_identifier }}"
 
