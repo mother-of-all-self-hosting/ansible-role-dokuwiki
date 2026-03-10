@@ -124,6 +124,12 @@ dokuwiki_container_labels_additional_labels: "{{ dokuwiki_container_labels_addit
 dokuwiki_container_labels_additional_labels_auto: []
 dokuwiki_container_labels_additional_labels_custom: []
 
+# Specify the size of the container's tmpfs volume (/var/run/apache2)
+dokuwiki_container_tmpfs_run_size: 128m
+
+# Specify the size of the container's tmpfs volume (/var/log/apache2)
+dokuwiki_container_tmpfs_log_size: 128m
+
 # A list of extra arguments to pass to the container (`docker create` command)
 dokuwiki_container_extra_arguments: "{{ dokuwiki_container_extra_arguments_auto + dokuwiki_container_extra_arguments_custom }}"
 dokuwiki_container_extra_arguments_auto: []
