@@ -5,81 +5,81 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Check existence of Actual systemd service
+- name: Check existence of DokuWiki systemd service
   ansible.builtin.stat:
-    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ actual_identifier }}.service"
-  register: actual_service_stat
+    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ dokuwiki_identifier }}.service"
+  register: dokuwiki_service_stat
 
-- name: Uninstall Actual systemd services and files
-  when: actual_service_stat.stat.exists | bool
+- name: Uninstall DokuWiki systemd services and files
+  when: dokuwiki_service_stat.stat.exists | bool
   block:
-    - name: Ensure Actual systemd service is stopped
+    - name: Ensure DokuWiki systemd service is stopped
       ansible.builtin.service:
-        name: "{{ actual_identifier }}"
+        name: "{{ dokuwiki_identifier }}"
         state: stopped
         enabled: false
         daemon_reload: true
 
-    - name: Ensure Actual systemd service does not exist
+    - name: Ensure DokuWiki systemd service does not exist
       ansible.builtin.file:
-        path: "{{ devture_systemd_docker_base_systemd_path }}/{{ actual_identifier }}.service"
+        path: "{{ devture_systemd_docker_base_systemd_path }}/{{ dokuwiki_identifier }}.service"
         state: absent
 
-    - name: Ensure Actual support files do not exist
+    - name: Ensure DokuWiki support files do not exist
       ansible.builtin.file:
-        path: "{{ actual_base_path }}/{{ item }}"
+        path: "{{ dokuwiki_base_path }}/{{ item }}"
         state: absent
       with_items:
         - env
         - labels
 
-    - name: Ensure Actual local data path does not exist if empty
+    - name: Ensure DokuWiki local data path does not exist if empty
       ansible.builtin.command:
-        cmd: "rmdir {{ actual_data_path }}"
-      register: actual_data_path_deletion_result
-      changed_when: actual_data_path_deletion_result.rc == 0
+        cmd: "rmdir {{ dokuwiki_data_path }}"
+      register: dokuwiki_data_path_deletion_result
+      changed_when: dokuwiki_data_path_deletion_result.rc == 0
       failed_when: false
 
-    - name: Ensure Actual base path does not exist if empty
+    - name: Ensure DokuWiki base path does not exist if empty
       ansible.builtin.command:
-        cmd: "rmdir {{ actual_base_path }}"
-      register: actual_base_path_deletion_result
-      changed_when: actual_base_path_deletion_result.rc == 0
+        cmd: "rmdir {{ dokuwiki_base_path }}"
+      register: dokuwiki_base_path_deletion_result
+      changed_when: dokuwiki_base_path_deletion_result.rc == 0
       failed_when: false
 
-    - name: Ensure Actual container network does not exist
-      when: actual_container_network_deletion_enabled
+    - name: Ensure DokuWiki container network does not exist
+      when: dokuwiki_container_network_deletion_enabled
       block:
-        - name: Ensure Actual container network does not exist via community.docker.docker_network
+        - name: Ensure DokuWiki container network does not exist via community.docker.docker_network
           when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
           community.docker.docker_network:
-            name: "{{ actual_container_network }}"
+            name: "{{ dokuwiki_container_network }}"
             state: absent
-          register: actual_network_deletion_result
+          register: dokuwiki_network_deletion_result
 
-        - name: Ensure Actual container network does not exist via ansible.builtin.command
+        - name: Ensure DokuWiki container network does not exist via ansible.builtin.command
           when: devture_systemd_docker_base_container_network_creation_method == 'command'
           ansible.builtin.command:
             cmd: >-
               {{ devture_systemd_docker_base_host_command_docker }} network rm
-              {{ actual_container_network }}
-          register: actual_network_deletion_result
-          changed_when: actual_container_network in actual_network_deletion_result.stdout
+              {{ dokuwiki_container_network }}
+          register: dokuwiki_network_deletion_result
+          changed_when: dokuwiki_container_network in dokuwiki_network_deletion_result.stdout
 
-- name: Check existence of Actual local data path
+- name: Check existence of DokuWiki local data path
   ansible.builtin.stat:
-    path: "{{ actual_data_path }}"
-  register: actual_data_path_stat
+    path: "{{ dokuwiki_data_path }}"
+  register: dokuwiki_data_path_stat
 
 # We just want to notify the user. Deleting data is too destructive.
-- name: Notify if Actual local data remains
-  when: actual_data_path_stat.stat.exists | bool
+- name: Notify if DokuWiki local data remains
+  when: dokuwiki_data_path_stat.stat.exists | bool
   ansible.builtin.set_fact:
     devture_playbook_runtime_messages_list: |
       {{
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: As the local Actual instance has been removed, some old data remains in `" + actual_data_path + "`. Feel free to delete it."
+          "Note: As the local DokuWiki instance has been removed, some old data remains in `" + dokuwiki_data_path + "`. Feel free to delete it."
         ]
       }}

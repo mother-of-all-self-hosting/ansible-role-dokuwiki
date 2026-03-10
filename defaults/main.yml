@@ -8,121 +8,121 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-# Project source code URL: https://github.com/actualbudget/actual
+# Project source code URL: https://github.com/dokuwiki/docker
 
-actual_enabled: true
+dokuwiki_enabled: true
 
-actual_identifier: actual
-actual_base_path: "/{{ actual_identifier }}"
-actual_data_path: "{{ actual_base_path }}/data"
+dokuwiki_identifier: dokuwiki
+dokuwiki_base_path: "/{{ dokuwiki_identifier }}"
+dokuwiki_data_path: "{{ dokuwiki_base_path }}/data"
 
-# renovate: datasource=docker depName=actualbudget/actual-server versioning=semver
-actual_version: 26.3.0
+# renovate: datasource=docker depName=dokuwikibudget/dokuwiki-server versioning=semver
+dokuwiki_version: 26.3.0
 
-actual_uid: ""
-actual_gid: ""
+dokuwiki_uid: ""
+dokuwiki_gid: ""
 
-# The scheme used for serving Actual.
-actual_scheme: https
+# The scheme used for serving DokuWiki.
+dokuwiki_scheme: https
 
-# The hostname at which Actual is served.
-actual_hostname: ""
+# The hostname at which DokuWiki is served.
+dokuwiki_hostname: ""
 
-# The path at which Actual is served.
-# This value must either be `/` or not end with a slash (e.g. `/actual`).
+# The path at which DokuWiki is served.
+# This value must either be `/` or not end with a slash (e.g. `/dokuwiki`).
 #
-# Hosting Actual under a subpath does not seem to be possible due to Actual's
+# Hosting DokuWiki under a subpath does not seem to be possible due to DokuWiki's
 # technical limitations.
-actual_path_prefix: /
+dokuwiki_path_prefix: /
 
-actual_container_image: "{{ actual_container_image_registry_prefix }}actualbudget/actual-server:{{ actual_container_image_tag }}"
-actual_container_image_tag: "{{ actual_version }}"
-actual_container_image_registry_prefix: "{{ actual_container_image_registry_prefix_upstream }}"
-actual_container_image_registry_prefix_upstream: "{{ actual_container_image_registry_prefix_upstream_default }}"
-actual_container_image_registry_prefix_upstream_default: docker.io/
-actual_container_image_force_pull: "{{ actual_container_image.endswith(':latest') }}"
+dokuwiki_container_image: "{{ dokuwiki_container_image_registry_prefix }}dokuwikibudget/dokuwiki-server:{{ dokuwiki_container_image_tag }}"
+dokuwiki_container_image_tag: "{{ dokuwiki_version }}"
+dokuwiki_container_image_registry_prefix: "{{ dokuwiki_container_image_registry_prefix_upstream }}"
+dokuwiki_container_image_registry_prefix_upstream: "{{ dokuwiki_container_image_registry_prefix_upstream_default }}"
+dokuwiki_container_image_registry_prefix_upstream_default: docker.io/
+dokuwiki_container_image_force_pull: "{{ dokuwiki_container_image.endswith(':latest') }}"
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
-actual_container_network: "{{ actual_identifier }}"
+dokuwiki_container_network: "{{ dokuwiki_identifier }}"
 
 # Control if the container network is deleted on uninstalling.
-actual_container_network_deletion_enabled: true
+dokuwiki_container_network_deletion_enabled: true
 
-# Specify how the container publishes its HTTP port (as defined by `actual_container_http_port`).
+# Specify how the container publishes its HTTP port (as defined by `dokuwiki_container_http_port`).
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
-actual_container_http_host_bind_port: ""
+dokuwiki_container_http_host_bind_port: ""
 
 # The port number in the container
-actual_container_http_port: 5006
+dokuwiki_container_http_port: 5006
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
 # Use this to expose this container to another reverse proxy, which runs in a different container network.
-actual_container_additional_networks: "{{ actual_container_additional_networks_auto + actual_container_additional_networks_custom }}"
-actual_container_additional_networks_auto: []
-actual_container_additional_networks_custom: []
+dokuwiki_container_additional_networks: "{{ dokuwiki_container_additional_networks_auto + dokuwiki_container_additional_networks_custom }}"
+dokuwiki_container_additional_networks_auto: []
+dokuwiki_container_additional_networks_custom: []
 
 # A list of additional "volumes" to mount in the container.
 # This list gets populated dynamically at runtime. You can provide a different default value,
 # if you wish to mount your own files into the container.
 # Contains definition objects like this: `{"type": "bind", "src": "/outside", "dst": "/inside", "options": "readonly"}.
 # See the `--mount` documentation for the `docker run` command.
-actual_container_additional_volumes: "{{ actual_container_additional_volumes_auto + actual_container_additional_volumes_custom }}"
-actual_container_additional_volumes_auto: []
-actual_container_additional_volumes_custom: []
+dokuwiki_container_additional_volumes: "{{ dokuwiki_container_additional_volumes_auto + dokuwiki_container_additional_volumes_custom }}"
+dokuwiki_container_additional_volumes_auto: []
+dokuwiki_container_additional_volumes_custom: []
 
-# actual_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# dokuwiki_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
 # See `../templates/labels.j2` for details.
 #
-# To inject your own other container labels, see `actual_container_labels_additional_labels_custom`.
-actual_container_labels_traefik_enabled: true
-actual_container_labels_traefik_docker_network: "{{ actual_container_network }}"
-actual_container_labels_traefik_hostname: "{{ actual_hostname }}"
-# The path prefix must either be `/` or not end with a slash (e.g. `/actual`).
-actual_container_labels_traefik_path_prefix: "{{ actual_path_prefix }}"
-actual_container_labels_traefik_rule: "Host(`{{ actual_container_labels_traefik_hostname }}`){% if actual_container_labels_traefik_path_prefix != '/' %} && PathPrefix(`{{ actual_container_labels_traefik_path_prefix }}`){% endif %}"
-actual_container_labels_traefik_priority: 0
-actual_container_labels_traefik_entrypoints: web-secure
-actual_container_labels_traefik_tls: "{{ actual_container_labels_traefik_entrypoints != 'web' }}"
-actual_container_labels_traefik_tls_certResolver: default  # noqa var-naming
+# To inject your own other container labels, see `dokuwiki_container_labels_additional_labels_custom`.
+dokuwiki_container_labels_traefik_enabled: true
+dokuwiki_container_labels_traefik_docker_network: "{{ dokuwiki_container_network }}"
+dokuwiki_container_labels_traefik_hostname: "{{ dokuwiki_hostname }}"
+# The path prefix must either be `/` or not end with a slash (e.g. `/dokuwiki`).
+dokuwiki_container_labels_traefik_path_prefix: "{{ dokuwiki_path_prefix }}"
+dokuwiki_container_labels_traefik_rule: "Host(`{{ dokuwiki_container_labels_traefik_hostname }}`){% if dokuwiki_container_labels_traefik_path_prefix != '/' %} && PathPrefix(`{{ dokuwiki_container_labels_traefik_path_prefix }}`){% endif %}"
+dokuwiki_container_labels_traefik_priority: 0
+dokuwiki_container_labels_traefik_entrypoints: web-secure
+dokuwiki_container_labels_traefik_tls: "{{ dokuwiki_container_labels_traefik_entrypoints != 'web' }}"
+dokuwiki_container_labels_traefik_tls_certResolver: default  # noqa var-naming
 
 # Controls which additional headers to attach to all HTTP requests.
-# To add your own custom request headers, use `actual_container_labels_traefik_additional_request_headers_custom`
-actual_container_labels_traefik_additional_request_headers: "{{ actual_container_labels_traefik_additional_request_headers_auto | combine(actual_container_labels_traefik_additional_request_headers_custom) }}"
-actual_container_labels_traefik_additional_request_headers_auto: {}
-actual_container_labels_traefik_additional_request_headers_custom: {}
+# To add your own custom request headers, use `dokuwiki_container_labels_traefik_additional_request_headers_custom`
+dokuwiki_container_labels_traefik_additional_request_headers: "{{ dokuwiki_container_labels_traefik_additional_request_headers_auto | combine(dokuwiki_container_labels_traefik_additional_request_headers_custom) }}"
+dokuwiki_container_labels_traefik_additional_request_headers_auto: {}
+dokuwiki_container_labels_traefik_additional_request_headers_custom: {}
 
 # Controls which additional headers to attach to all HTTP responses.
-# To add your own custom response headers, use `actual_container_labels_traefik_additional_response_headers_custom`
-actual_container_labels_traefik_additional_response_headers: "{{ actual_container_labels_traefik_additional_response_headers_auto | combine(actual_container_labels_traefik_additional_response_headers_custom) }}"
-actual_container_labels_traefik_additional_response_headers_auto: |
+# To add your own custom response headers, use `dokuwiki_container_labels_traefik_additional_response_headers_custom`
+dokuwiki_container_labels_traefik_additional_response_headers: "{{ dokuwiki_container_labels_traefik_additional_response_headers_auto | combine(dokuwiki_container_labels_traefik_additional_response_headers_custom) }}"
+dokuwiki_container_labels_traefik_additional_response_headers_auto: |
   {{
     {}
-    | combine ({'X-XSS-Protection': actual_http_header_xss_protection} if actual_http_header_xss_protection else {})
-    | combine ({'X-Content-Type-Options': actual_http_header_content_type_options} if actual_http_header_content_type_options else {})
-    | combine ({'Content-Security-Policy': actual_http_header_content_security_policy} if actual_http_header_content_security_policy else {})
-    | combine ({'Permissions-Policy': actual_http_header_permissions_policy} if actual_http_header_permissions_policy else {})
-    | combine ({'Strict-Transport-Security': actual_http_header_strict_transport_security} if actual_http_header_strict_transport_security and actual_container_labels_traefik_tls else {})
+    | combine ({'X-XSS-Protection': dokuwiki_http_header_xss_protection} if dokuwiki_http_header_xss_protection else {})
+    | combine ({'X-Content-Type-Options': dokuwiki_http_header_content_type_options} if dokuwiki_http_header_content_type_options else {})
+    | combine ({'Content-Security-Policy': dokuwiki_http_header_content_security_policy} if dokuwiki_http_header_content_security_policy else {})
+    | combine ({'Permissions-Policy': dokuwiki_http_header_permissions_policy} if dokuwiki_http_header_permissions_policy else {})
+    | combine ({'Strict-Transport-Security': dokuwiki_http_header_strict_transport_security} if dokuwiki_http_header_strict_transport_security and dokuwiki_container_labels_traefik_tls else {})
   }}
-actual_container_labels_traefik_additional_response_headers_custom: {}
+dokuwiki_container_labels_traefik_additional_response_headers_custom: {}
 
-# actual_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# dokuwiki_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
 # See `../templates/labels.j2` for details.
-# To add your own custom labels, use `actual_container_labels_additional_labels_custom`
+# To add your own custom labels, use `dokuwiki_container_labels_additional_labels_custom`
 #
 # Example:
-# actual_container_labels_additional_labels_custom:
+# dokuwiki_container_labels_additional_labels_custom:
 #   - my.label=1
 #   - another.label="here"
-actual_container_labels_additional_labels: "{{ actual_container_labels_additional_labels_auto + actual_container_labels_additional_labels_custom }}"
-actual_container_labels_additional_labels_auto: []
-actual_container_labels_additional_labels_custom: []
+dokuwiki_container_labels_additional_labels: "{{ dokuwiki_container_labels_additional_labels_auto + dokuwiki_container_labels_additional_labels_custom }}"
+dokuwiki_container_labels_additional_labels_auto: []
+dokuwiki_container_labels_additional_labels_custom: []
 
 # A list of extra arguments to pass to the container (`docker create` command)
-actual_container_extra_arguments: "{{ actual_container_extra_arguments_auto + actual_container_extra_arguments_custom }}"
-actual_container_extra_arguments_auto: []
-actual_container_extra_arguments_custom: []
+dokuwiki_container_extra_arguments: "{{ dokuwiki_container_extra_arguments_auto + dokuwiki_container_extra_arguments_custom }}"
+dokuwiki_container_extra_arguments_auto: []
+dokuwiki_container_extra_arguments_custom: []
 
 # Specifies the value of the `X-XSS-Protection` header
 # Stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
@@ -130,23 +130,23 @@ actual_container_extra_arguments_custom: []
 # Learn more about it is here:
 # - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
 # - https://portswigger.net/web-security/cross-site-scripting/reflected
-actual_http_header_xss_protection: "1; mode=block"
+dokuwiki_http_header_xss_protection: "1; mode=block"
 
 # Specifies the value of the `X-Content-Type-Options` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
-actual_http_header_content_type_options: nosniff
+dokuwiki_http_header_content_type_options: nosniff
 
 # Specifies the value of the `Content-Security-Policy` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
-actual_http_header_content_security_policy: frame-ancestors 'self'
+dokuwiki_http_header_content_security_policy: frame-ancestors 'self'
 
 # Specifies the value of the `Permissions-Policy` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
-actual_http_header_permissions_policy: "{{ 'interest-cohort=()' if actual_floc_optout_enabled else '' }}"
+dokuwiki_http_header_permissions_policy: "{{ 'interest-cohort=()' if dokuwiki_floc_optout_enabled else '' }}"
 
 # Specifies the value of the `Strict-Transport-Security` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
-actual_http_header_strict_transport_security: "max-age=31536000; includeSubDomains{{ '; preload' if actual_hsts_preload_enabled else '' }}"
+dokuwiki_http_header_strict_transport_security: "max-age=31536000; includeSubDomains{{ '; preload' if dokuwiki_hsts_preload_enabled else '' }}"
 
 # Controls whether to send a "Permissions-Policy interest-cohort=();" header along with all responses
 #
@@ -156,8 +156,8 @@ actual_http_header_strict_transport_security: "max-age=31536000; includeSubDomai
 # - https://amifloced.org/
 #
 # Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
-# See: `actual_http_header_permissions_policy`
-actual_floc_optout_enabled: true
+# See: `dokuwiki_http_header_permissions_policy`
+dokuwiki_floc_optout_enabled: true
 
 # Controls if HSTS preloading is enabled
 #
@@ -168,59 +168,59 @@ actual_floc_optout_enabled: true
 # - https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security
 # - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
 # - https://hstspreload.org/#opt-in
-# See: `actual_http_header_strict_transport_security`
-actual_hsts_preload_enabled: false
+# See: `dokuwiki_http_header_strict_transport_security`
+dokuwiki_hsts_preload_enabled: false
 
-# List of systemd services that the Actual systemd service depends on
-actual_systemd_required_services_list: "{{ actual_systemd_required_services_list_default + actual_systemd_required_services_list_auto + actual_systemd_required_services_list_custom }}"
-actual_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
-actual_systemd_required_services_list_auto: []
-actual_systemd_required_services_list_custom: []
+# List of systemd services that the DokuWiki systemd service depends on
+dokuwiki_systemd_required_services_list: "{{ dokuwiki_systemd_required_services_list_default + dokuwiki_systemd_required_services_list_auto + dokuwiki_systemd_required_services_list_custom }}"
+dokuwiki_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+dokuwiki_systemd_required_services_list_auto: []
+dokuwiki_systemd_required_services_list_custom: []
 
-# List of systemd services that the Actual systemd service wants
-actual_systemd_wanted_services_list: "{{ actual_systemd_wanted_services_list_default + actual_systemd_wanted_services_list_auto + actual_systemd_wanted_services_list_custom }}"
-actual_systemd_wanted_services_list_default: []
-actual_systemd_wanted_services_list_auto: []
-actual_systemd_wanted_services_list_custom: []
+# List of systemd services that the DokuWiki systemd service wants
+dokuwiki_systemd_wanted_services_list: "{{ dokuwiki_systemd_wanted_services_list_default + dokuwiki_systemd_wanted_services_list_auto + dokuwiki_systemd_wanted_services_list_custom }}"
+dokuwiki_systemd_wanted_services_list_default: []
+dokuwiki_systemd_wanted_services_list_auto: []
+dokuwiki_systemd_wanted_services_list_custom: []
 
 # Controls how long to wait for the container to stop gracefully before killing it.
-actual_container_stop_grace_time_seconds: "{{ devture_systemd_docker_base_container_stop_grace_time_seconds }}"
+dokuwiki_container_stop_grace_time_seconds: "{{ devture_systemd_docker_base_container_stop_grace_time_seconds }}"
 
 # Controls how long the pre-start cleanup should wait for stale container-name release
 # before failing startup explicitly.
-actual_container_cleanup_timeout_seconds: "{{ devture_systemd_docker_base_container_cleanup_timeout_seconds }}"
+dokuwiki_container_cleanup_timeout_seconds: "{{ devture_systemd_docker_base_container_cleanup_timeout_seconds }}"
 
 # Controls the delay between pre-start cleanup retries.
-actual_container_cleanup_retry_delay_seconds: "{{ devture_systemd_docker_base_container_cleanup_retry_delay_seconds }}"
+dokuwiki_container_cleanup_retry_delay_seconds: "{{ devture_systemd_docker_base_container_cleanup_retry_delay_seconds }}"
 
 # Shell command used in the systemd pre-start phase to deterministically remove a stale
 # container and wait until Docker releases its name.
-actual_container_cleanup_command: |
+dokuwiki_container_cleanup_command: |
   i=0;
-  while [ "$i" -lt {{ actual_container_cleanup_timeout_seconds }} ]; do
-  {{ devture_systemd_docker_base_host_command_docker }} stop -t {{ actual_container_stop_grace_time_seconds }} {{ actual_identifier }} >/dev/null 2>&1 || true;
-  {{ devture_systemd_docker_base_host_command_docker }} rm -f {{ actual_identifier }} >/dev/null 2>&1 || true;
-  if {{ devture_systemd_docker_base_host_command_docker }} container inspect {{ actual_identifier }} >/dev/null 2>&1; then
+  while [ "$i" -lt {{ dokuwiki_container_cleanup_timeout_seconds }} ]; do
+  {{ devture_systemd_docker_base_host_command_docker }} stop -t {{ dokuwiki_container_stop_grace_time_seconds }} {{ dokuwiki_identifier }} >/dev/null 2>&1 || true;
+  {{ devture_systemd_docker_base_host_command_docker }} rm -f {{ dokuwiki_identifier }} >/dev/null 2>&1 || true;
+  if {{ devture_systemd_docker_base_host_command_docker }} container inspect {{ dokuwiki_identifier }} >/dev/null 2>&1; then
   i=$((i + 1));
-  sleep {{ actual_container_cleanup_retry_delay_seconds }};
+  sleep {{ dokuwiki_container_cleanup_retry_delay_seconds }};
   continue;
   fi;
   if {{ devture_systemd_docker_base_host_command_docker }} info >/dev/null 2>&1; then
   exit 0;
   fi;
-  echo "Failed to query Docker daemon while cleaning up {{ actual_identifier }}" >&2;
+  echo "Failed to query Docker daemon while cleaning up {{ dokuwiki_identifier }}" >&2;
   exit 1;
   done;
-  echo "Failed to remove stale container {{ actual_identifier }} after {{ actual_container_cleanup_timeout_seconds }} attempts" >&2;
+  echo "Failed to remove stale container {{ dokuwiki_identifier }} after {{ dokuwiki_container_cleanup_timeout_seconds }} attempts" >&2;
   exit 1
 
 # Specify the timezone
-actual_environment_variables_tz: UTC
+dokuwiki_environment_variables_tz: UTC
 
 # Additional environment variables.
-actual_environment_variables_additional_variables: ""
+dokuwiki_environment_variables_additional_variables: ""
 
-# actual_restart_necessary controls whether the Actual systemd
+# dokuwiki_restart_necessary controls whether the DokuWiki systemd
 # service will be restarted (when true) or merely started (when false) by the
 # systemd service manager role (when conditional restart is enabled).
 #
@@ -228,4 +228,4 @@ actual_environment_variables_additional_variables: ""
 # any configuration files, the systemd service file, or the container image changed.
 # The default of `false` means "no restart needed" — appropriate when the role's
 # installation tasks haven't run (e.g., due to --tags skipping them).
-actual_restart_necessary: false
+dokuwiki_restart_necessary: false

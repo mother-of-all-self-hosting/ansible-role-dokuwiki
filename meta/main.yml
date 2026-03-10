@@ -4,7 +4,7 @@ galaxy_info:
   company: shukon
   role_name: dokuwiki
   namespace: mash
-  description: Dokuwiki
+  description: DokuWiki
   platforms:
     - name: Debian
       versions:

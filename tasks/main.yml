@@ -5,24 +5,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Perform Actual installation tasks
-  when: actual_enabled | bool
+- name: Perform DokuWiki installation tasks
+  when: dokuwiki_enabled | bool
   tags:
     - setup-all
-    - setup-actual
+    - setup-dokuwiki
     - install-all
-    - install-actual
+    - install-dokuwiki
   block:
-    - name: Validate Actual configuration
+    - name: Validate DokuWiki configuration
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
-    - name: Install Actual
+    - name: Install DokuWiki
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
 
-- name: Perform Actual uninstallation tasks
-  when: not actual_enabled | bool
+- name: Perform DokuWiki uninstallation tasks
+  when: not dokuwiki_enabled | bool
   tags:
     - setup-all
-    - setup-actual
+    - setup-dokuwiki
   block:
-    - name: Uninstall Actual
+    - name: Uninstall DokuWiki
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
