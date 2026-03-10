@@ -1,29 +1,28 @@
+# SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2025 shukon
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-
-- name: Install DokuWiki
+- name: Perform Actual installation tasks
+  when: actual_enabled | bool
   tags:
     - setup-all
-    - setup-dokuwiki
+    - setup-actual
     - install-all
-    - install-dokuwiki
+    - install-actual
   block:
-    - name: Run DokuWiki validation tasks
-      when: dokuwiki_enabled | bool
+    - name: Validate Actual configuration
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
-
-    - name: Run DokuWiki installation tasks
-      when: dokuwiki_enabled | bool
+    - name: Install Actual
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
 
-- name: Uninstall DokuWiki
+- name: Perform Actual uninstallation tasks
+  when: not actual_enabled | bool
   tags:
     - setup-all
-    - setup-dokuwiki
+    - setup-actual
   block:
-    - name: Run DokuWiki uninstallation tasks
-      when: not dokuwiki_enabled | bool
+    - name: Uninstall Actual
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"

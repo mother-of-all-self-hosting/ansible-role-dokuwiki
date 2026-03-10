@@ -1,39 +1,46 @@
+# SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2025 shukon
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-
-- name: Fail if required dokuwiki settings not defined
+- name: Fail if required Actual settings not defined
   ansible.builtin.fail:
     msg: >-
-      You need to define a required configuration setting (`{{ item }}`) for using this role.
-  when: "vars[item] == ''"
+      You need to define a required configuration setting (`{{ item }}`).
+  when: "lookup('vars', item, default='') | string | length == 0"
   with_items:
-    - dokuwiki_hostname
+    - actual_uid
+    - actual_gid
+    - actual_hostname
+    - actual_path_prefix
+    - actual_container_network
 
-- name: Fail if dokuwiki hosted at a subpath
-  ansible.builtin.fail:
-    msg: >
-      Dokuwiki can currently only be hosted at the base path (`/`), not at a subpath like `{{ dokuwiki_path_prefix }}`).
-  when: "dokuwiki_path_prefix != '/'"
-
-- name: Validate DokuWiki Traefik configuration
-  when: dokuwiki_container_labels_traefik_enabled | bool
+- name: Run if Traefik is enabled
+  when: actual_container_labels_traefik_enabled | bool
   block:
-    - name: Fail if required dokuwiki Traefik settings not defined
+    - name: Fail if Traefik settings required for Actual are not defined
       ansible.builtin.fail:
         msg: >-
           You need to define a required configuration setting (`{{ item }}`).
-      when: "vars[item] == ''"
+      when: "lookup('vars', item, default='') | string | length == 0"
       with_items:
-        - dokuwiki_container_labels_traefik_hostname
+        - actual_container_labels_traefik_hostname
+        - actual_container_labels_traefik_path_prefix
 
-    # We ensure it doesn't end with a slash, because we handle both (slash and no-slash).
-    # Knowing that `dokuwiki_container_labels_traefik_path_prefix` does not end with a slash
-    # ensures we know how to set these routes up without having to do "does it end with a slash" checks elsewhere.
-    - name: Fail if dokuwiki_container_labels_traefik_path_prefix ends with a slash
+    - name: Fail if actual_container_labels_traefik_path_prefix is different than /
       ansible.builtin.fail:
         msg: >-
-          dokuwiki_container_labels_traefik_path_prefix (`{{ dokuwiki_container_labels_traefik_path_prefix }}`) must either be `/` or not end with a slash (e.g. `/dokuwiki`).
-      when: "dokuwiki_container_labels_traefik_path_prefix != '/' and dokuwiki_container_labels_traefik_path_prefix[-1] == '/'"
+          actual_container_labels_traefik_path_prefix (`{{ actual_container_labels_traefik_path_prefix }}`) must be `/`.
+          Actual does not support hosting under a subpath yet.
+      when: "actual_container_labels_traefik_path_prefix != '/'"
+
+    # We ensure it doesn't end with a slash, because we handle both (slash and no-slash).
+    # Knowing that `actual_container_labels_traefik_path_prefix` does not end with a slash
+    # ensures we know how to set these routes up without having to do "does it end with a slash" checks elsewhere.
+    - name: Fail if actual_container_labels_traefik_path_prefix ends with a slash
+      ansible.builtin.fail:
+        msg: >-
+          actual_container_labels_traefik_path_prefix (`{{ actual_container_labels_traefik_path_prefix }}`) must either be `/` or not end with a slash (e.g. `/actual`).
+      when: "actual_container_labels_traefik_path_prefix != '/' and actual_container_labels_traefik_path_prefix[-1] == '/'"

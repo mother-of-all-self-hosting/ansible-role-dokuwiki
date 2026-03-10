@@ -1,37 +1,62 @@
 {#
+SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 SPDX-FileCopyrightText: 2025 shukon
+SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 #}
 
-{% if dokuwiki_container_labels_traefik_enabled %}
+{% if actual_container_labels_traefik_enabled %}
 traefik.enable=true
 
-{% if dokuwiki_container_labels_traefik_docker_network %}
-traefik.docker.network={{ dokuwiki_container_labels_traefik_docker_network }}
-{% endif %}
-
-traefik.http.routers.{{ dokuwiki_identifier }}.rule={{ dokuwiki_container_labels_traefik_rule }}
-{% if dokuwiki_container_labels_traefik_priority | int > 0 %}
-traefik.http.routers.{{ dokuwiki_identifier }}.priority={{ dokuwiki_container_labels_traefik_priority }}
-{% endif %}
-traefik.http.routers.{{ dokuwiki_identifier }}.service={{ dokuwiki_identifier }}
-traefik.http.routers.{{ dokuwiki_identifier }}.entrypoints={{ dokuwiki_container_labels_traefik_entrypoints }}
-traefik.http.routers.{{ dokuwiki_identifier }}.tls={{ dokuwiki_container_labels_traefik_tls | to_json }}
-{% if dokuwiki_container_labels_traefik_tls %}
-traefik.http.routers.{{ dokuwiki_identifier }}.tls.certResolver={{ dokuwiki_container_labels_traefik_tls_certResolver }}
-{% endif %}
-
-traefik.http.services.{{ dokuwiki_identifier }}.loadbalancer.server.port=8080
+{% if actual_container_labels_traefik_docker_network %}
+traefik.docker.network={{ actual_container_labels_traefik_docker_network }}
 {% endif %}
 
 {% set middlewares = [] %}
 
-{% if dokuwiki_container_labels_traefik_additional_response_headers.keys() | length > 0 %}
-{% for name, value in dokuwiki_container_labels_traefik_additional_response_headers.items() %}
-traefik.http.middlewares.{{ dokuwiki_identifier }}-add-headers.headers.customresponseheaders.{{ name }}={{ value }}
-{% endfor %}
-{% set middlewares = middlewares + [dokuwiki_identifier + '-add-headers'] %}
+{% if actual_container_labels_traefik_path_prefix != '/' %}
+traefik.http.middlewares.{{ actual_identifier }}-slashless-redirect.redirectregex.regex=^({{ actual_container_labels_traefik_path_prefix | quote }})$
+traefik.http.middlewares.{{ actual_identifier }}-slashless-redirect.redirectregex.replacement=${1}/
+{% set middlewares = middlewares + [actual_identifier + '-slashless-redirect'] %}
 {% endif %}
 
-{{ dokuwiki_container_labels_additional_labels }}
+{% if actual_container_labels_traefik_path_prefix != '/' %}
+traefik.http.middlewares.{{ actual_identifier }}-strip-prefix.stripprefix.prefixes={{ actual_container_labels_traefik_path_prefix }}
+{% set middlewares = middlewares + [actual_identifier + '-strip-prefix'] %}
+{% endif %}
+
+{% if actual_container_labels_traefik_additional_request_headers.keys() | length > 0 %}
+{% for name, value in actual_container_labels_traefik_additional_request_headers.items() %}
+traefik.http.middlewares.{{ actual_identifier }}-add-request-headers.headers.customrequestheaders.{{ name }}={{ value }}
+{% endfor %}
+{% set middlewares = middlewares + [actual_identifier + '-add-request-headers'] %}
+{% endif %}
+
+{% if actual_container_labels_traefik_additional_response_headers.keys() | length > 0 %}
+{% for name, value in actual_container_labels_traefik_additional_response_headers.items() %}
+traefik.http.middlewares.{{ actual_identifier }}-add-response-headers.headers.customresponseheaders.{{ name }}={{ value }}
+{% endfor %}
+{% set middlewares = middlewares + [actual_identifier + '-add-response-headers'] %}
+{% endif %}
+
+traefik.http.routers.{{ actual_identifier }}.rule={{ actual_container_labels_traefik_rule }}
+{% if actual_container_labels_traefik_priority | int > 0 %}
+traefik.http.routers.{{ actual_identifier }}.priority={{ actual_container_labels_traefik_priority }}
+{% endif %}
+traefik.http.routers.{{ actual_identifier }}.service={{ actual_identifier }}
+{% if middlewares | length > 0 %}
+traefik.http.routers.{{ actual_identifier }}.middlewares={{ middlewares | join(',') }}
+{% endif %}
+traefik.http.routers.{{ actual_identifier }}.entrypoints={{ actual_container_labels_traefik_entrypoints }}
+traefik.http.routers.{{ actual_identifier }}.tls={{ actual_container_labels_traefik_tls | to_json }}
+{% if actual_container_labels_traefik_tls %}
+traefik.http.routers.{{ actual_identifier }}.tls.certResolver={{ actual_container_labels_traefik_tls_certResolver }}
+{% endif %}
+
+traefik.http.services.{{ actual_identifier }}.loadbalancer.server.port={{ actual_container_http_port }}
+{% endif %}
+
+{% for arg in actual_container_labels_additional_labels %}
+{{ arg }}
+{% endfor %}
