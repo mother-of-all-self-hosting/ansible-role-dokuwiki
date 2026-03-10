@@ -222,9 +222,8 @@ dokuwiki_container_cleanup_command: |
 # Specify the timezone
 dokuwiki_environment_variables_tz: UTC
 
-dokuwiki_php_uploadlimit: 128M
-dokuwiki_php_memorylimit: 256M
-dokuwiki_php_timezone: "{{ dokuwiki_environment_variables_tz }}"
+dokuwiki_environment_variables_php_uploadlimit: 128M
+dokuwiki_environment_variables_php_memorylimit: 256M
 
 # Additional environment variables.
 dokuwiki_environment_variables_additional_variables: ""
