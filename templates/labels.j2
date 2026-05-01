@@ -15,6 +15,11 @@ traefik.docker.network={{ dokuwiki_container_labels_traefik_docker_network }}
 
 {% set middlewares = [] %}
 
+{% if dokuwiki_container_labels_traefik_middleware_basic_auth_enabled %}
+{% set middlewares = middlewares + [dokuwiki_identifier + '-basic-auth'] %}
+traefik.http.middlewares.{{ dokuwiki_identifier }}-basic-auth.basicauth.users={{ dokuwiki_container_labels_traefik_middleware_basic_auth_users }}
+{% endif %}
+
 {% if dokuwiki_container_labels_traefik_path_prefix != '/' %}
 traefik.http.middlewares.{{ dokuwiki_identifier }}-slashless-redirect.redirectregex.regex=^({{ dokuwiki_container_labels_traefik_path_prefix | quote }})$
 traefik.http.middlewares.{{ dokuwiki_identifier }}-slashless-redirect.redirectregex.replacement=${1}/
