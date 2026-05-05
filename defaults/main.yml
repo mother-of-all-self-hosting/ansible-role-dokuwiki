@@ -39,7 +39,6 @@ dokuwiki_container_image_tag: "{{ dokuwiki_version }}"
 dokuwiki_container_image_registry_prefix: "{{ dokuwiki_container_image_registry_prefix_upstream }}"
 dokuwiki_container_image_registry_prefix_upstream: "{{ dokuwiki_container_image_registry_prefix_upstream_default }}"
 dokuwiki_container_image_registry_prefix_upstream_default: docker.io/
-dokuwiki_container_image_force_pull: "{{ dokuwiki_container_image.endswith(':latest') }}"
 
 dokuwiki_container_image_self_build: false
 dokuwiki_container_image_self_build_name: "dokuwiki/dokuwiki:{{ dokuwiki_container_image_self_build_repo_version }}"

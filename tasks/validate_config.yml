@@ -15,6 +15,7 @@
     - { "old": "dokuwiki_php_uploadlimit", "new": "dokuwiki_environment_variables_php_uploadlimit" }
     - { "old": "dokuwiki_php_memorylimit", "new": "dokuwiki_environment_variables_php_memorylimit" }
     - { "old": "dokuwiki_php_timezone", "new": "dokuwiki_environment_variables_tz" }
+    - { "old": "dokuwiki_container_image_force_pull", "new": "<removed> (the new community.docker.docker_image_pull module handles this natively)" }
 
 - name: Fail if required DokuWiki settings not defined
   ansible.builtin.fail:
