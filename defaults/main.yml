@@ -16,6 +16,7 @@ dokuwiki_identifier: dokuwiki
 dokuwiki_base_path: "/{{ dokuwiki_identifier }}"
 dokuwiki_data_path: "{{ dokuwiki_base_path }}/data"
 
+# renovate: datasource=docker depName=dokuwiki/dokuwiki
 dokuwiki_version: 2025-05-14b
 
 dokuwiki_uid: ""
