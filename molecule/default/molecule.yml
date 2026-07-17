@@ -27,6 +27,10 @@ provisioner:
   inventory:
     group_vars:
       all:
+        # Helper variables
+        dokuwiki_debug_service_enabled: false
+
+        # Variables for DokuWiki
         dokuwiki_uid: 1000
         dokuwiki_gid: 1000
         dokuwiki_hostname: dokuwiki
