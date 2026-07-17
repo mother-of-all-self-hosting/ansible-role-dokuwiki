@@ -33,7 +33,8 @@ provisioner:
         # Variables for DokuWiki
         dokuwiki_uid: 1000
         dokuwiki_gid: 1000
-        dokuwiki_hostname: dokuwiki
+        dokuwiki_scheme: http
+        dokuwiki_hostname: localhost
         dokuwiki_container_labels_traefik_enabled: false
         dokuwiki_container_http_host_bind_port: 8080
   env:
