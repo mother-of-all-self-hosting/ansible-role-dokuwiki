@@ -66,7 +66,7 @@
       community.docker.docker_image_build:
         name: "{{ dokuwiki_container_image_self_build_name }}"
         dockerfile: Dockerfile
-        path: "{{ dokuwiki_container_image_self_build_repo_dockerfile_dir }}"
+        path: "{{ dokuwiki_container_image_self_build_src_files_path }}"
         pull: true
         rebuild: "{{ 'always' if dokuwiki_git_pull_results.changed | bool else 'never' }}"
       register: dokuwiki_container_image_build_result
