@@ -1,53 +1,261 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify DokuWiki systemd service
+- name: Verify DokuWiki
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    dokuwiki_molecule_base_url: http://127.0.0.1:8080
+    dokuwiki_molecule_jsonrpc_url: http://127.0.0.1:8080/lib/exe/jsonrpc.php
+
   tasks:
-    - name: Wait for DokuWiki service to become active (up to 180s)
-      ansible.builtin.systemd:
+    # Loaded under a name of its own so that it cannot quietly outrank the values this scenario
+    # tunes through group_vars. Only leaf literals may be read from here; the Jinja-derived
+    # defaults cannot be evaluated outside the role.
+    - name: Read the role's own defaults
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: dokuwiki_role_defaults
+
+    - name: Wait for the DokuWiki service to become active (up to 180s)
+      ansible.builtin.systemd_service:
         name: dokuwiki.service
       register: dokuwiki_service
       until: dokuwiki_service.status.ActiveState == 'active'
       retries: 36
       delay: 5
 
-    - name: Assert DokuWiki service is active
+    - name: Assert the DokuWiki service is active
       ansible.builtin.assert:
         that: dokuwiki_service.status.ActiveState == 'active'
-        fail_msg: "dokuwiki.service not active ({{ dokuwiki_service.status.ActiveState }})"
+        fail_msg: "dokuwiki.service is not active ({{ dokuwiki_service.status.ActiveState }})"
         success_msg: "dokuwiki.service is active"
 
-    - name: Retrieve DokuWiki service log for debugging
+    - name: Retrieve the DokuWiki service log for debugging
       when: dokuwiki_debug_service_enabled | bool
       ansible.builtin.command:
         cmd: journalctl -xeu dokuwiki.service
       changed_when: false
 
-    - name: Wait for DokuWiki HTTP endpoint to respond (up to 10m)
+    - name: Wait for the DokuWiki HTTP endpoint to answer (up to 5m)
       ansible.builtin.uri:
-        url: "http://localhost:8080/"
+        url: "{{ dokuwiki_molecule_base_url }}/"
         method: GET
-        status_code: [200, 302]
+        status_code: 200
         follow_redirects: none
-      register: dokuwiki_endpoint
-      until: dokuwiki_endpoint.status in [200, 302]
-      retries: 120
+        return_content: true
+      register: dokuwiki_start_page
+      until: dokuwiki_start_page.status == 200
+      retries: 60
       delay: 5
 
-    - name: Assert DokuWiki HTTP endpoint responds
-      ansible.builtin.assert:
-        that: dokuwiki_endpoint.status in [200, 302]
-        fail_msg: "DokuWiki did not respond as expected ({{ dokuwiki_endpoint.status | default('no response') }})"
-        success_msg: "DokuWiki responded with {{ dokuwiki_endpoint.status }}"
+    # `Restart=always` makes systemd report a crash-looping container as active, so the service
+    # being active says very little on its own. Asked again now that the wiki has answered, a
+    # container which cannot write to the bind-mounted data path, or which dies on a bad `env`
+    # file, has had time to show up as a restart count instead.
+    - name: Re-read the DokuWiki service state now that the wiki has answered
+      ansible.builtin.systemd_service:
+        name: dokuwiki.service
+      register: dokuwiki_service_settled
 
-    - name: Show DokuWiki systemd service status summary
+    - name: Assert the DokuWiki service has not been restarting
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_service_settled.status.ActiveState == 'active'
+          - dokuwiki_service_settled.status.NRestarts | int == 0
+        fail_msg: >-
+          dokuwiki.service is {{ dokuwiki_service_settled.status.ActiveState }} after
+          {{ dokuwiki_service_settled.status.NRestarts }} restart(s), which means the container is
+          not staying up
+        success_msg: "dokuwiki.service is active and has not needed a restart"
+
+    - name: Inspect the DokuWiki container
+      ansible.builtin.command:
+        cmd: docker inspect dokuwiki
+      register: dokuwiki_container_inspect
+      changed_when: false
+
+    - name: Keep the DokuWiki container's configuration around
+      ansible.builtin.set_fact:
+        dokuwiki_container: "{{ dokuwiki_container_inspect.stdout | from_json | first }}"
+
+    - name: Assert the DokuWiki container runs the image the role points at
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_container.Config.Image == 'docker.io/dokuwiki/dokuwiki:' ~ dokuwiki_role_defaults.dokuwiki_version
+        fail_msg: >-
+          The container runs {{ dokuwiki_container.Config.Image }} rather than the image that
+          dokuwiki_version ({{ dokuwiki_role_defaults.dokuwiki_version }}) points at
+        success_msg: "The container runs docker.io/dokuwiki/dokuwiki:{{ dokuwiki_role_defaults.dokuwiki_version }}"
+
+    # An image reference only says which image was started. This asks the running DokuWiki itself,
+    # over HTTP, which release it is, and compares that against the literal Renovate bumps and the
+    # release tag is named after. Split rather than searched, so that pinning `2026-07-14` while
+    # `2026-07-14b` actually runs cannot pass.
+    - name: Ask the running DokuWiki for its version
+      ansible.builtin.uri:
+        url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.getWikiVersion"
+        method: POST
+        body_format: json
+        body: {}
+        status_code: 200
+        return_content: true
+      register: dokuwiki_version_response
+
+    - name: Assert the running DokuWiki is the version the role pins
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_version_response.json.error.code == 0
+          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_role_defaults.dokuwiki_version
+        fail_msg: >-
+          The running DokuWiki reports "{{ dokuwiki_version_response.json.result | default('nothing') }}",
+          which is not dokuwiki_version ({{ dokuwiki_role_defaults.dokuwiki_version }})
+        success_msg: "The running DokuWiki is {{ dokuwiki_role_defaults.dokuwiki_version }}"
+
+    # A DokuWiki that was never set up serves its start page just as happily, titled `DokuWiki`.
+    # The seeded title can only come from the configuration below the role's data path.
+    - name: Assert DokuWiki serves the wiki that was seeded into the role's data path
+      ansible.builtin.assert:
+        that:
+          - "'[' ~ dokuwiki_molecule_wiki_title ~ ']' in dokuwiki_start_page.content"
+        fail_msg: >-
+          The start page is not titled after {{ dokuwiki_molecule_wiki_title }}, so DokuWiki is not
+          reading the configuration below {{ dokuwiki_data_path }}
+        success_msg: "DokuWiki serves the wiki seeded below {{ dokuwiki_data_path }}"
+
+    - name: Fetch the wiki page that was seeded on the filesystem
+      ansible.builtin.uri:
+        url: "{{ dokuwiki_molecule_base_url }}/probe:seeded"
+        method: GET
+        status_code: 200
+        follow_redirects: none
+        return_content: true
+      register: dokuwiki_seeded_page
+
+    - name: Assert a page file below the role's data path is served over HTTP
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_molecule_seeded_page_marker in dokuwiki_seeded_page.content
+        fail_msg: >-
+          probe:seeded does not carry the marker that was written to
+          {{ dokuwiki_data_path }}/data/pages/probe/seeded.txt
+        success_msg: "A page file below {{ dokuwiki_data_path }} is served over HTTP"
+
+    - name: Write a wiki page through DokuWiki's HTTP API
+      ansible.builtin.uri:
+        url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.savePage"
+        method: POST
+        body_format: json
+        body:
+          page: probe:roundtrip
+          text: "{{ dokuwiki_molecule_roundtrip_marker }}"
+          summary: Written by the Molecule verification
+        status_code: 200
+        return_content: true
+      register: dokuwiki_save_page_response
+      changed_when: dokuwiki_save_page_response.json.result | default(false) | bool
+
+    - name: Look for the file that DokuWiki should have written
+      ansible.builtin.stat:
+        path: "{{ dokuwiki_data_path }}/data/pages/probe/roundtrip.txt"
+        get_checksum: false
+      register: dokuwiki_roundtrip_file
+
+    - name: Read the contents of the file that DokuWiki wrote
+      when: dokuwiki_roundtrip_file.stat.exists
+      ansible.builtin.slurp:
+        src: "{{ dokuwiki_data_path }}/data/pages/probe/roundtrip.txt"
+      register: dokuwiki_roundtrip_content
+
+    # The other direction of the round trip. A page created over HTTP has to turn up on the host,
+    # in the role's data path, owned by the uid the role runs the container as - which proves the
+    # bind mount, the uid and the directory permissions all at once.
+    - name: Assert a page written over HTTP lands in the role's data path
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_save_page_response.json.error.code == 0
+          - dokuwiki_save_page_response.json.result | bool
+          - dokuwiki_roundtrip_file.stat.exists
+          - dokuwiki_roundtrip_file.stat.uid == dokuwiki_uid | int
+          - dokuwiki_molecule_roundtrip_marker in (dokuwiki_roundtrip_content.content | default('') | b64decode)
+        fail_msg: >-
+          The page created over HTTP did not turn up as
+          {{ dokuwiki_data_path }}/data/pages/probe/roundtrip.txt owned by uid {{ dokuwiki_uid }}
+        success_msg: "A page created over HTTP was written into {{ dokuwiki_data_path }} as uid {{ dokuwiki_uid }}"
+
+    # DokuWiki answers a refused read with HTTP 200 and a "Permission Denied" body, so the status
+    # code says nothing here and the body has to be looked at.
+    - name: Fetch the ACL-protected wiki page as an anonymous reader
+      ansible.builtin.uri:
+        url: "{{ dokuwiki_molecule_base_url }}/private:secret"
+        method: GET
+        status_code: 200
+        follow_redirects: none
+        return_content: true
+      register: dokuwiki_private_page
+
+    - name: Assert the ACL-protected page is refused to an anonymous reader
+      ansible.builtin.assert:
+        that:
+          - "'Permission Denied' in dokuwiki_private_page.content"
+          - dokuwiki_molecule_secret_marker not in dokuwiki_private_page.content
+        fail_msg: "private:secret was served to an anonymous reader"
+        success_msg: "private:secret is refused to an anonymous reader"
+
+    - name: Read the PHP settings that the role's env file controls
+      ansible.builtin.command:
+        cmd: >-
+          docker exec dokuwiki
+          php -r "echo ini_get('memory_limit'), ' ', ini_get('upload_max_filesize'), ' ', ini_get('date.timezone');"
+      register: dokuwiki_php_settings
+      changed_when: false
+
+    - name: Read the additional environment variable that the role's env file carries
+      ansible.builtin.command:
+        cmd: docker exec dokuwiki printenv MASH_MOLECULE_ENV_PROBE
+      register: dokuwiki_env_probe
+      changed_when: false
+
+    - name: Assert the role's env template reached the PHP process
+      ansible.builtin.assert:
+        that:
+          - >-
+            dokuwiki_php_settings.stdout == dokuwiki_environment_variables_php_memorylimit
+            ~ ' ' ~ dokuwiki_environment_variables_php_uploadlimit
+            ~ ' ' ~ dokuwiki_environment_variables_tz
+          - dokuwiki_env_probe.stdout == 'set-through-the-role-env-template'
+        fail_msg: >-
+          PHP reports "{{ dokuwiki_php_settings.stdout }}" instead of the values the role's env
+          file sets, or the additional variables were not passed along
+        success_msg: "The role's env template reached the PHP process"
+
+    # `.get()` rather than a subscript, so that a label the template failed to render at all
+    # reads as a failed assertion rather than as an undefined-variable error.
+    - name: Assert the role's labels template reached the container
+      vars:
+        dokuwiki_labels: "{{ dokuwiki_container.Config.Labels | default({}, true) }}"
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_labels.get('mash.molecule.probe', '') == 'set-through-the-role-labels-template'
+          - dokuwiki_labels.get('traefik.enable', '') == 'true'
+          - dokuwiki_labels.get('traefik.http.routers.dokuwiki.rule', '') == 'Host(`' ~ dokuwiki_hostname ~ '`)'
+          - dokuwiki_labels.get('traefik.http.services.dokuwiki.loadbalancer.server.port', '') == '8080'
+          - >-
+            dokuwiki_labels.get('traefik.http.middlewares.dokuwiki-add-response-headers.headers.customresponseheaders.Content-Security-Policy', '')
+            == "frame-ancestors 'self'"
+        fail_msg: "The container is not carrying the labels that templates/labels.j2 renders"
+        success_msg: "The role's labels template reached the container"
+
+    - name: Show what was verified
       ansible.builtin.debug:
         msg:
-          - "DokuWiki systemd: {{ dokuwiki_service.status.ActiveState }}"
-          - "DokuWiki HTTP: {{ dokuwiki_endpoint.status }}"
+          - "systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
+          - "image: {{ dokuwiki_container.Config.Image }}"
+          - "running DokuWiki: {{ dokuwiki_version_response.json.result }}"
+          - "PHP settings from the role's env file: {{ dokuwiki_php_settings.stdout }}"

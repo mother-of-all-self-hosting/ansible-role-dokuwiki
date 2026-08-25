@@ -45,13 +45,24 @@ pip3 install -r ./molecule/requirements.txt
 
 Currently these testing scenarios are available:
 
+DokuWiki keeps no database — its configuration and its pages are plain files below the path that this role bind-mounts into the container — and a DokuWiki which has never been through `install.php` still answers every page with HTTP 200. Both scenarios therefore seed the files that a completed installation would have left behind (from `prepare.yml`, so that `converge.yml` stays idempotent), and then check things which a wiki that was never set up cannot produce.
+
 ### `default`
 
-Tests a standard DokuWiki installation.
+Tests a standard DokuWiki installation against a pulled container image. It checks that:
+
+- the service stays up, rather than merely reporting itself active while `Restart=always` papers over a crash loop
+- the running DokuWiki reports the exact release that `dokuwiki_version` pins
+- the wiki being served is the one seeded below the role's data path, rather than an unconfigured DokuWiki
+- a page file below the role's data path is served over HTTP, and a page created over HTTP lands back on the host as the uid the role runs the container as — which exercises the bind mount, the uid and the directory permissions together
+- an ACL-protected page is refused to an anonymous reader
+- the values from `templates/env.j2` reach the PHP process, and the labels from `templates/labels.j2` reach the container
+
+The scenario deliberately picks PHP settings that differ from the container image's own defaults, because the image happens to default to the same values the role does.
 
 ### `default-selfbuild`
 
-Tests a standard DokuWiki installation with self-building the container image.
+Tests a standard DokuWiki installation with self-building the container image. It does not repeat what the `default` scenario already establishes, and checks what only self-building can get wrong: that the image was built rather than pulled, and that the DokuWiki release inside it is the one `dokuwiki_version` pins. The packaging repository has no per-release branches or tags, so that release is selected through a build argument whose default would otherwise install whatever release is current at build time.
 
 ## Running
 

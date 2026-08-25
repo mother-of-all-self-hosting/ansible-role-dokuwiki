@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -27,3 +28,92 @@
       vars:
         docker_daemon_options:
           storage-driver: vfs
+
+# DokuWiki keeps no database: its configuration and its pages are plain files below the path that
+# this role bind-mounts into the container. A DokuWiki which has never been through `install.php`
+# still answers every page with HTTP 200, so a scenario that only pokes at the HTTP endpoint would
+# pass just as well against a wiki that was never set up at all.
+#
+# The role deliberately does not template DokuWiki's own configuration - the wiki is set up through
+# its web installer - so this seeds the files that a completed installation would have left behind.
+# Doing it here rather than from converge.yml is what keeps converge.yml idempotent.
+- name: Seed a set-up DokuWiki into the role's data path
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Ensure the DokuWiki storage directories exist for seeding
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0750"
+        owner: "{{ dokuwiki_uid }}"
+        group: "{{ dokuwiki_gid }}"
+      loop:
+        - "{{ dokuwiki_base_path }}"
+        - "{{ dokuwiki_data_path }}"
+        - "{{ dokuwiki_data_path }}/conf"
+        - "{{ dokuwiki_data_path }}/data"
+        - "{{ dokuwiki_data_path }}/data/pages"
+        - "{{ dokuwiki_data_path }}/data/pages/probe"
+        - "{{ dokuwiki_data_path }}/data/pages/private"
+
+    # `title` is what tells a set-up wiki apart from a fresh one, which titles itself `DokuWiki`.
+    # `remote` exposes DokuWiki's JSON-RPC API, which verify.yml uses to write a page through HTTP
+    # and to ask the running wiki which version it is.
+    - name: Ensure DokuWiki's local configuration is seeded
+      ansible.builtin.copy:
+        dest: "{{ dokuwiki_data_path }}/conf/local.php"
+        mode: "0640"
+        owner: "{{ dokuwiki_uid }}"
+        group: "{{ dokuwiki_gid }}"
+        content: |
+          <?php
+          $conf['title'] = '{{ dokuwiki_molecule_wiki_title }}';
+          $conf['lang'] = 'en';
+          $conf['license'] = 'cc-by-sa';
+          $conf['useacl'] = 1;
+          $conf['superuser'] = '@admin';
+          $conf['disableactions'] = 'register';
+          $conf['remote'] = 1;
+          $conf['remoteuser'] = '@ALL';
+
+    # Anonymous readers may read the wiki and write below `probe:`, but must be refused `private:`.
+    - name: Ensure DokuWiki's access control list is seeded
+      ansible.builtin.copy:
+        dest: "{{ dokuwiki_data_path }}/conf/acl.auth.php"
+        mode: "0640"
+        owner: "{{ dokuwiki_uid }}"
+        group: "{{ dokuwiki_gid }}"
+        content: |
+          # acl.auth.php
+          *               @ALL        1
+          probe:*         @ALL        8
+          private:*       @ALL        0
+
+    - name: Ensure DokuWiki's user list is seeded
+      ansible.builtin.copy:
+        dest: "{{ dokuwiki_data_path }}/conf/users.auth.php"
+        mode: "0640"
+        owner: "{{ dokuwiki_uid }}"
+        group: "{{ dokuwiki_gid }}"
+        content: |
+          # users.auth.php
+
+    - name: Ensure a readable wiki page is seeded on the filesystem
+      ansible.builtin.copy:
+        dest: "{{ dokuwiki_data_path }}/data/pages/probe/seeded.txt"
+        mode: "0640"
+        owner: "{{ dokuwiki_uid }}"
+        group: "{{ dokuwiki_gid }}"
+        content: |
+          {{ dokuwiki_molecule_seeded_page_marker }}
+
+    - name: Ensure an ACL-protected wiki page is seeded on the filesystem
+      ansible.builtin.copy:
+        dest: "{{ dokuwiki_data_path }}/data/pages/private/secret.txt"
+        mode: "0640"
+        owner: "{{ dokuwiki_uid }}"
+        group: "{{ dokuwiki_gid }}"
+        content: |
+          {{ dokuwiki_molecule_secret_marker }}
