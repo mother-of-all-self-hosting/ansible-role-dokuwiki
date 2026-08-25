@@ -53,9 +53,24 @@ dokuwiki_container_image_registry_prefix_upstream: "{{ dokuwiki_container_image_
 dokuwiki_container_image_registry_prefix_upstream_default: docker.io/
 
 dokuwiki_container_image_self_build: false
-dokuwiki_container_image_self_build_name: "dokuwiki/dokuwiki:{{ dokuwiki_container_image_self_build_repo_version }}"
+dokuwiki_container_image_self_build_name: "dokuwiki/dokuwiki:{{ dokuwiki_container_image_self_build_version }}-self-build"
 dokuwiki_container_image_self_build_repo: "https://github.com/dokuwiki/docker.git"
 dokuwiki_container_image_self_build_repo_version: main
+
+# The DokuWiki release that self-building installs into the container image.
+#
+# The packaging repository (`dokuwiki_container_image_self_build_repo`) is versioned separately
+# from DokuWiki itself and carries no per-release branches or tags, so the release is selected
+# through its `DOKUWIKI_VERSION` build argument instead of through the checked out revision.
+# Leaving this at its default keeps a self-built image on the same DokuWiki release as a pulled
+# one. Its Dockerfile defaults the argument to `stable`, which would otherwise silently install
+# whatever the newest release happens to be at build time, regardless of `dokuwiki_version`.
+#
+# The build downloads `https://download.dokuwiki.org/src/dokuwiki/dokuwiki-<value>.tgz`, so any
+# released version works here, as do the `stable` and `oldstable` aliases. `master` is special-cased
+# by the build script and installs the development version from Git.
+dokuwiki_container_image_self_build_version: "{{ dokuwiki_version }}"
+
 dokuwiki_container_image_self_build_src_files_path: "{{ dokuwiki_base_path }}/docker-src"
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.

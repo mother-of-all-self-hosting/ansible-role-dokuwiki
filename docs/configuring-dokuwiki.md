@@ -66,6 +66,22 @@ Take a look at:
 
 - [`defaults/main.yml`](../defaults/main.yml) for some variables that you can customize via your `vars.yml` file. You can override settings (even those that don't have dedicated playbook variables) using the `dokuwiki_environment_variables_additional_variables` variable
 
+### Building the container image on the server
+
+Instead of pulling a ready-made container image, the role can build one on the server from [DokuWiki's packaging repository](https://github.com/dokuwiki/docker). To do so, add the following configuration to your `vars.yml` file:
+
+```yaml
+dokuwiki_container_image_self_build: true
+```
+
+The DokuWiki release that gets installed into the image is the one that `dokuwiki_version` points at, just like for a pulled image. The packaging repository is versioned separately from DokuWiki itself and carries no per-release branches or tags, so the release is selected through the `DOKUWIKI_VERSION` build argument of its `Dockerfile`, which this role passes along.
+
+If you would rather build a different release than the one the role pins — the `stable` or `oldstable` alias, or `master` for the development version — set `dokuwiki_container_image_self_build_version` to it:
+
+```yaml
+dokuwiki_container_image_self_build_version: master
+```
+
 ## Installing
 
 After configuring the playbook, run the installation command of your playbook as below:

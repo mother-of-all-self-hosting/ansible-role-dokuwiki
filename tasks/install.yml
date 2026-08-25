@@ -62,11 +62,16 @@
         force: "yes"
       register: dokuwiki_git_pull_results
 
+    # The image name carries `dokuwiki_container_image_self_build_version`, so changing the
+    # DokuWiki release asks for an image that does not exist yet and gets built even when the
+    # packaging repository itself has not moved.
     - name: Ensure DokuWiki container image is built
       community.docker.docker_image_build:
         name: "{{ dokuwiki_container_image_self_build_name }}"
         dockerfile: Dockerfile
         path: "{{ dokuwiki_container_image_self_build_src_files_path }}"
+        args:
+          DOKUWIKI_VERSION: "{{ dokuwiki_container_image_self_build_version }}"
         pull: true
         rebuild: "{{ 'always' if dokuwiki_git_pull_results.changed | bool else 'never' }}"
       register: dokuwiki_container_image_build_result
