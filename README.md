@@ -36,3 +36,11 @@ just prek-install-git-pre-commit-hook
 This role supports [Molecule](https://docs.ansible.com/projects/molecule/), an Ansible testing framework designed for developing and testing Ansible collections, playbooks, and roles.
 
 Refer to [this page](./molecule/README.md) for details about how to utilize it.
+
+### Releases
+
+Releases are tagged automatically. Every push to `main` runs [`bin/compute-next-tag.sh`](./bin/compute-next-tag.sh), which derives the tag from [`defaults/main.yml`](defaults/main.yml) and the tags that already exist, rather than from commit messages — so the result does not depend on the order in which changes get merged, and any change that affects the role releases itself.
+
+Tags look like `v<DokuWiki version>-<release>`, for example `v2025-05-14b-4`. DokuWiki names its releases after their release date and its hotfix releases by appending a letter to it, so `2026-07-14` and `2026-07-14a` are two different releases, each with a release counter of its own.
+
+[`bin/test-compute-next-tag.sh`](./bin/test-compute-next-tag.sh) exercises the computation against throwaway repositories; it runs as a prek hook whenever the script or `defaults/main.yml` changes.
