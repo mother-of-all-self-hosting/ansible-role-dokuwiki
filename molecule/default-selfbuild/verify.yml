@@ -84,7 +84,7 @@
 
     - name: Inspect the DokuWiki container
       ansible.builtin.command:
-        cmd: docker inspect dokuwiki
+        cmd: docker container inspect dokuwiki
       register: dokuwiki_container_inspect
       changed_when: false
 
