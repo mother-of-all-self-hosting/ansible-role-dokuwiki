@@ -1,53 +1,154 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+# What the `default` scenario checks about a pulled image holds for a self-built one too, so this
+# does not repeat it. What only self-building can get wrong is checked here instead: that an image
+# was built rather than pulled, and that the DokuWiki release baked into it is the one the role
+# pins. The packaging repository has no per-release branches or tags, so that release is chosen
+# through a build argument - get that wrong and the image still works, it just silently contains a
+# different DokuWiki than the one this repository releases itself as.
+
 ---
-- name: Verify DokuWiki systemd service
+- name: Verify a self-built DokuWiki
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    dokuwiki_molecule_base_url: http://127.0.0.1:8080
+    dokuwiki_molecule_jsonrpc_url: http://127.0.0.1:8080/lib/exe/jsonrpc.php
+
   tasks:
-    - name: Wait for DokuWiki service to become active (up to 180s)
-      ansible.builtin.systemd:
+    - name: Read the role's own defaults
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: dokuwiki_role_defaults
+
+    - name: Work out which image the role should have built
+      ansible.builtin.set_fact:
+        dokuwiki_expected_self_build_image: "dokuwiki/dokuwiki:{{ dokuwiki_role_defaults.dokuwiki_version }}-self-build"
+
+    - name: Wait for the DokuWiki service to become active (up to 180s)
+      ansible.builtin.systemd_service:
         name: dokuwiki.service
       register: dokuwiki_service
       until: dokuwiki_service.status.ActiveState == 'active'
       retries: 36
       delay: 5
 
-    - name: Assert DokuWiki service is active
+    - name: Assert the DokuWiki service is active
       ansible.builtin.assert:
         that: dokuwiki_service.status.ActiveState == 'active'
-        fail_msg: "dokuwiki.service not active ({{ dokuwiki_service.status.ActiveState }})"
+        fail_msg: "dokuwiki.service is not active ({{ dokuwiki_service.status.ActiveState }})"
         success_msg: "dokuwiki.service is active"
 
-    - name: Retrieve DokuWiki service log for debugging
+    - name: Retrieve the DokuWiki service log for debugging
       when: dokuwiki_debug_service_enabled | bool
       ansible.builtin.command:
         cmd: journalctl -xeu dokuwiki.service
       changed_when: false
 
-    - name: Wait for DokuWiki HTTP endpoint to respond (up to 10m)
+    - name: Wait for the DokuWiki HTTP endpoint to answer (up to 5m)
       ansible.builtin.uri:
-        url: "http://localhost:8080/"
+        url: "{{ dokuwiki_molecule_base_url }}/"
         method: GET
-        status_code: [200, 302]
+        status_code: 200
         follow_redirects: none
-      register: dokuwiki_endpoint
-      until: dokuwiki_endpoint.status in [200, 302]
-      retries: 120
+        return_content: true
+      register: dokuwiki_start_page
+      until: dokuwiki_start_page.status == 200
+      retries: 60
       delay: 5
 
-    - name: Assert DokuWiki HTTP endpoint responds
-      ansible.builtin.assert:
-        that: dokuwiki_endpoint.status in [200, 302]
-        fail_msg: "DokuWiki did not respond as expected ({{ dokuwiki_endpoint.status | default('no response') }})"
-        success_msg: "DokuWiki responded with {{ dokuwiki_endpoint.status }}"
+    # `Restart=always` makes systemd report a crash-looping container as active, so the service
+    # being active says very little on its own. Asked again now that the wiki has answered, a
+    # self-built image which cannot serve the storage layout has had time to show up here.
+    - name: Re-read the DokuWiki service state now that the wiki has answered
+      ansible.builtin.systemd_service:
+        name: dokuwiki.service
+      register: dokuwiki_service_settled
 
-    - name: Show DokuWiki systemd service status summary
+    - name: Assert the DokuWiki service has not been restarting
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_service_settled.status.ActiveState == 'active'
+          - dokuwiki_service_settled.status.NRestarts | int == 0
+        fail_msg: >-
+          dokuwiki.service is {{ dokuwiki_service_settled.status.ActiveState }} after
+          {{ dokuwiki_service_settled.status.NRestarts }} restart(s), which means the self-built
+          container is not staying up
+        success_msg: "dokuwiki.service is active and has not needed a restart"
+
+    - name: Inspect the DokuWiki container
+      ansible.builtin.command:
+        cmd: docker inspect dokuwiki
+      register: dokuwiki_container_inspect
+      changed_when: false
+
+    - name: Inspect the image the role built
+      ansible.builtin.command:
+        cmd: "docker image inspect {{ dokuwiki_expected_self_build_image }}"
+      register: dokuwiki_image_inspect
+      changed_when: false
+
+    - name: Keep the container's and the image's configuration around
+      ansible.builtin.set_fact:
+        dokuwiki_container: "{{ dokuwiki_container_inspect.stdout | from_json | first }}"
+        dokuwiki_image: "{{ dokuwiki_image_inspect.stdout | from_json | first }}"
+
+    # A pulled image carries the digest it was pulled by; a locally built one has none. Together
+    # with the image name, which no registry serves, this says the role really built it.
+    - name: Assert the container runs an image that was built here, not pulled
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_container.Config.Image == dokuwiki_expected_self_build_image
+          - dokuwiki_image.RepoDigests | length == 0
+        fail_msg: >-
+          The container runs {{ dokuwiki_container.Config.Image }} rather than a locally built
+          {{ dokuwiki_expected_self_build_image }}
+        success_msg: "The container runs the locally built {{ dokuwiki_expected_self_build_image }}"
+
+    # The whole point of this scenario. The packaging repository's Dockerfile defaults its
+    # DOKUWIKI_VERSION build argument to `stable`, so without the role passing the pinned version
+    # along, this reports whatever the newest DokuWiki release happens to be.
+    - name: Ask the self-built DokuWiki for its version
+      ansible.builtin.uri:
+        url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.getWikiVersion"
+        method: POST
+        body_format: json
+        body: {}
+        status_code: 200
+        return_content: true
+      register: dokuwiki_version_response
+
+    - name: Assert the self-built image contains the DokuWiki release the role pins
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_version_response.json.error.code == 0
+          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_role_defaults.dokuwiki_version
+        fail_msg: >-
+          The self-built DokuWiki reports "{{ dokuwiki_version_response.json.result | default('nothing') }}",
+          which is not dokuwiki_version ({{ dokuwiki_role_defaults.dokuwiki_version }}). The
+          DOKUWIKI_VERSION build argument did not take effect.
+        success_msg: "The self-built image contains DokuWiki {{ dokuwiki_role_defaults.dokuwiki_version }}"
+
+    # Self-building rearranges where DokuWiki's writable directories live, so the storage layout is
+    # worth re-checking against a built image rather than assumed from the `default` scenario.
+    - name: Assert the self-built DokuWiki serves the wiki seeded into the role's data path
+      ansible.builtin.assert:
+        that:
+          - "'[' ~ dokuwiki_molecule_wiki_title ~ ']' in dokuwiki_start_page.content"
+        fail_msg: >-
+          The start page is not titled after {{ dokuwiki_molecule_wiki_title }}, so the self-built
+          image is not reading the configuration below {{ dokuwiki_data_path }}
+        success_msg: "The self-built DokuWiki serves the wiki seeded below {{ dokuwiki_data_path }}"
+
+    - name: Show what was verified
       ansible.builtin.debug:
         msg:
-          - "DokuWiki systemd: {{ dokuwiki_service.status.ActiveState }}"
-          - "DokuWiki HTTP: {{ dokuwiki_endpoint.status }}"
+          - "systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
+          - "built image: {{ dokuwiki_container.Config.Image }}"
+          - "self-built DokuWiki: {{ dokuwiki_version_response.json.result }}"

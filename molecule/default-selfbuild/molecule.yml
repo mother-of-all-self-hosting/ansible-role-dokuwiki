@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -31,15 +32,32 @@ provisioner:
         # Helper variables
         dokuwiki_debug_service_enabled: false
 
+        # prepare.yml seeds files into the role's data path before the role has ever run, so it
+        # needs that path spelled out. The role derives it through Jinja, which cannot be read
+        # back out of defaults/main.yml with include_vars.
+        dokuwiki_base_path: /dokuwiki
+        dokuwiki_data_path: /dokuwiki/data
+
+        # Markers that prepare.yml seeds and verify.yml looks for. Nothing but this scenario can
+        # have produced them, which is what makes the assertions using them worth anything.
+        dokuwiki_molecule_wiki_title: MASH Molecule DokuWiki
+        dokuwiki_molecule_seeded_page_marker: seeded-into-the-role-data-path-by-prepare
+        dokuwiki_molecule_secret_marker: this-must-never-be-served-to-an-anonymous-reader
+        dokuwiki_molecule_roundtrip_marker: written-through-the-http-api-by-verify
+
         # Variables for DokuWiki
         dokuwiki_uid: 1000
         dokuwiki_gid: 1000
         dokuwiki_scheme: http
-        dokuwiki_hostname: localhost
-        dokuwiki_container_labels_traefik_enabled: false
+        dokuwiki_hostname: dokuwiki.local
         dokuwiki_container_http_host_bind_port: 8080
 
-        # Test self-building
+        dokuwiki_container_labels_traefik_enabled: false
+
+        # What this scenario is here for: building the container image on the host rather than
+        # pulling it. The interesting part is that the DokuWiki release which ends up inside the
+        # built image is the one `dokuwiki_version` names - the packaging repository's Dockerfile
+        # would otherwise install whatever release is `stable` at build time.
         dokuwiki_container_image_self_build: true
   env:
     # Workaround for https://github.com/ansible/molecule/issues/4391
