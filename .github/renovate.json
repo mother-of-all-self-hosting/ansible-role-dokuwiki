@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>mother-of-all-self-hosting/renovate-config#v1.0.0"
+  ],
+  "packageRules": [
+    {
+      "description": "No patch-automerge for DokuWiki. This role hosts the wiki's own content in its data volume, so a fresh-install Molecule run structurally cannot see the risk of an upgrade against existing data. On top of that, the `versioning=loose` that makes this dependency visible to Renovate at all (see the comment in defaults/main.yml) only parses the year out of a `2026-07-14b` tag, so a same-year feature release - 2018-04-22 -> 2018-08-06 and 2014-05-05 -> 2014-09-29 both happened - would be classified as a patch. `matchUpdateTypes: [patch]` therefore cannot be trusted to mean 'hotfix release only' here. Bumps land as a pull request for a human to look at.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["dokuwiki/dokuwiki"],
+      "automerge": false
+    }
   ]
 }

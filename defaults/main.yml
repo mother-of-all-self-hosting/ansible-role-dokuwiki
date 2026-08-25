@@ -16,7 +16,18 @@ dokuwiki_identifier: dokuwiki
 dokuwiki_base_path: "/{{ dokuwiki_identifier }}"
 dokuwiki_data_path: "{{ dokuwiki_base_path }}/data"
 
-# renovate: datasource=docker depName=dokuwiki/dokuwiki
+# DokuWiki releases are named after their release date (`2026-07-14`), with hotfix releases
+# adding a letter suffix (`2026-07-14a`, `2026-07-14b`).
+#
+# `versioning=loose` is required here. Renovate's default `docker` versioning reads everything
+# after the first `-` as a compatibility suffix, so `2025-05-14b` (suffix `05-14b`) is considered
+# incompatible with `2026-07-14b` (suffix `07-14b`) — and with every other tag this image
+# publishes. The dependency is then detected but never updatable, which is what happened here:
+# every bump of this value so far was made by hand. `loose` orders the tags correctly
+# (`2025-05-14` < `2025-05-14a` < `2025-05-14b` < `2026-07-14` < `2026-07-14a` < `2026-07-14b`)
+# and considers them mutually compatible.
+#
+# renovate: datasource=docker depName=dokuwiki/dokuwiki versioning=loose
 dokuwiki_version: 2025-05-14b
 
 dokuwiki_uid: ""
