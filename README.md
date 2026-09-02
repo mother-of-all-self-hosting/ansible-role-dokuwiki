@@ -39,8 +39,6 @@ Refer to [this page](./molecule/README.md) for details about how to utilize it.
 
 ### Releases
 
-Releases are tagged automatically. Every push to `main` runs [`bin/compute-next-tag.sh`](./bin/compute-next-tag.sh), which derives the tag from [`defaults/main.yml`](defaults/main.yml) and the tags that already exist, rather than from commit messages — so the result does not depend on the order in which changes get merged, and any change that affects the role releases itself.
+Tags are created by [`.github/workflows/autotag.yml`](.github/workflows/autotag.yml), which asks [`bin/compute-next-tag.sh`](bin/compute-next-tag.sh) what the commit on `main` should be released as. The answer comes from the DokuWiki version pinned in [`defaults/main.yml`](defaults/main.yml) and from the tags that already exist, so a commit that only touches documentation or CI is not released at all, and any change to the role itself is — without waiting for a dependency bump to carry it along.
 
-Tags look like `v<DokuWiki version>-<release>`, for example `v2025-05-14b-4`. DokuWiki names its releases after their release date and its hotfix releases by appending a letter to it, so `2026-07-14` and `2026-07-14a` are two different releases, each with a release counter of its own.
-
-[`bin/test-compute-next-tag.sh`](./bin/test-compute-next-tag.sh) exercises the computation against throwaway repositories; it runs as a prek hook whenever the script or `defaults/main.yml` changes.
+[`bin/test-compute-next-tag.sh`](bin/test-compute-next-tag.sh) exercises that script against throwaway repositories, and runs as a prek hook.
