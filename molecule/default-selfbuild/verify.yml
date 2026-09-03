@@ -124,16 +124,13 @@
         return_content: true
       register: dokuwiki_version_response
 
-    - name: Assert the self-built image contains the DokuWiki release the role pins
+    - name: Assert the running DokuWiki is the version this role installs
       ansible.builtin.assert:
         that:
           - dokuwiki_version_response.json.error.code == 0
           - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_role_defaults.dokuwiki_version
-        fail_msg: >-
-          The self-built DokuWiki reports "{{ dokuwiki_version_response.json.result | default('nothing') }}",
-          which is not dokuwiki_version ({{ dokuwiki_role_defaults.dokuwiki_version }}). The
-          DOKUWIKI_VERSION build argument did not take effect.
-        success_msg: "The self-built image contains DokuWiki {{ dokuwiki_role_defaults.dokuwiki_version }}"
+        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_role_defaults.dokuwiki_version }}"
+        success_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result }}"
 
     # Self-building rearranges where DokuWiki's writable directories live, so the storage layout is
     # worth re-checking against a built image rather than assumed from the `default` scenario.
