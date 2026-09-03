@@ -146,9 +146,9 @@
           image is not reading the configuration below {{ dokuwiki_data_path }}
         success_msg: "The self-built DokuWiki serves the wiki seeded below {{ dokuwiki_data_path }}"
 
-    - name: Show what was verified
+    - name: Show the DokuWiki verification summary
       ansible.builtin.debug:
         msg:
-          - "systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
-          - "built image: {{ dokuwiki_container.Config.Image }}"
-          - "self-built DokuWiki: {{ dokuwiki_version_response.json.result }}"
+          - "DokuWiki systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
+          - "DokuWiki built image: {{ dokuwiki_container.Config.Image }}"
+          - "DokuWiki self-built DokuWiki: {{ dokuwiki_version_response.json.result }}"

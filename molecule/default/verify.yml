@@ -252,10 +252,10 @@
         fail_msg: "The container is not carrying the labels that templates/labels.j2 renders"
         success_msg: "The role's labels template reached the container"
 
-    - name: Show what was verified
+    - name: Show the DokuWiki verification summary
       ansible.builtin.debug:
         msg:
-          - "systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
-          - "image: {{ dokuwiki_container.Config.Image }}"
-          - "running DokuWiki: {{ dokuwiki_version_response.json.result }}"
-          - "PHP settings from the role's env file: {{ dokuwiki_php_settings.stdout }}"
+          - "DokuWiki systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
+          - "DokuWiki image: {{ dokuwiki_container.Config.Image }}"
+          - "DokuWiki running DokuWiki: {{ dokuwiki_version_response.json.result }}"
+          - "DokuWiki PHP settings from the role's env file: {{ dokuwiki_php_settings.stdout }}"
