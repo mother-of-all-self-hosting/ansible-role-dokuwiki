@@ -12,7 +12,7 @@
 # different DokuWiki than the one this repository releases itself as.
 
 ---
-- name: Verify a self-built DokuWiki
+- name: Verify self-built DokuWiki
   hosts: all
   become: true
   gather_facts: false
