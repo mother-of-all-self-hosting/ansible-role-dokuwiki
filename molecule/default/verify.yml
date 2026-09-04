@@ -15,13 +15,13 @@
     dokuwiki_molecule_jsonrpc_url: http://127.0.0.1:8080/lib/exe/jsonrpc.php
 
   tasks:
-    # Loaded under a name of its own so that it cannot quietly outrank the values this scenario
-    # tunes through group_vars. Only leaf literals may be read from here; the Jinja-derived
-    # defaults cannot be evaluated outside the role.
-    - name: Read the role's own defaults
+    # The role is not included in this playbook, so its defaults are not in
+    # scope. Reading defaults/main.yml directly ties the version assertion
+    # below.
+    - name: Load the role defaults
       ansible.builtin.include_vars:
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: dokuwiki_role_defaults
+        name: dokuwiki_defaults
 
     - name: Wait for the DokuWiki service to become active (up to 180s)
       ansible.builtin.systemd_service:
@@ -88,11 +88,11 @@
     - name: Assert the DokuWiki container runs the image the role points at
       ansible.builtin.assert:
         that:
-          - dokuwiki_container.Config.Image == 'docker.io/dokuwiki/dokuwiki:' ~ dokuwiki_role_defaults.dokuwiki_version
+          - dokuwiki_container.Config.Image == 'docker.io/dokuwiki/dokuwiki:' ~ dokuwiki_defaults.dokuwiki_version
         fail_msg: >-
           The container runs {{ dokuwiki_container.Config.Image }} rather than the image that
-          dokuwiki_version ({{ dokuwiki_role_defaults.dokuwiki_version }}) points at
-        success_msg: "The container runs docker.io/dokuwiki/dokuwiki:{{ dokuwiki_role_defaults.dokuwiki_version }}"
+          dokuwiki_version ({{ dokuwiki_defaults.dokuwiki_version }}) points at
+        success_msg: "The container runs docker.io/dokuwiki/dokuwiki:{{ dokuwiki_defaults.dokuwiki_version }}"
 
     # An image reference only says which image was started. This asks the running DokuWiki itself,
     # over HTTP, which release it is, and compares that against the literal Renovate bumps and the
@@ -112,8 +112,8 @@
       ansible.builtin.assert:
         that:
           - dokuwiki_version_response.json.error.code == 0
-          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_role_defaults.dokuwiki_version
-        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_role_defaults.dokuwiki_version }}"
+          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_defaults.dokuwiki_version
+        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_defaults.dokuwiki_version }}"
         success_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result }}"
 
     # A DokuWiki that was never set up serves its start page just as happily, titled `DokuWiki`.

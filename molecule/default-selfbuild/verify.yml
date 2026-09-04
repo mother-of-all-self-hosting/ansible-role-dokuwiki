@@ -22,14 +22,17 @@
     dokuwiki_molecule_jsonrpc_url: http://127.0.0.1:8080/lib/exe/jsonrpc.php
 
   tasks:
-    - name: Read the role's own defaults
+    # The role is not included in this playbook, so its defaults are not in
+    # scope. Reading defaults/main.yml directly ties the version assertion
+    # below.
+    - name: Load the role defaults
       ansible.builtin.include_vars:
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: dokuwiki_role_defaults
+        name: dokuwiki_defaults
 
     - name: Work out which image the role should have built
       ansible.builtin.set_fact:
-        dokuwiki_expected_self_build_image: "dokuwiki/dokuwiki:{{ dokuwiki_role_defaults.dokuwiki_version }}-self-build"
+        dokuwiki_expected_self_build_image: "dokuwiki/dokuwiki:{{ dokuwiki_defaults.dokuwiki_version }}-self-build"
 
     - name: Wait for the DokuWiki service to become active (up to 180s)
       ansible.builtin.systemd_service:
@@ -128,8 +131,8 @@
       ansible.builtin.assert:
         that:
           - dokuwiki_version_response.json.error.code == 0
-          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_role_defaults.dokuwiki_version
-        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_role_defaults.dokuwiki_version }}"
+          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_defaults.dokuwiki_version
+        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_defaults.dokuwiki_version }}"
         success_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result }}"
 
     # Self-building rearranges where DokuWiki's writable directories live, so the storage layout is
