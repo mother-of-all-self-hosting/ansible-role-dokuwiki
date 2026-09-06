@@ -55,6 +55,28 @@
       retries: 60
       delay: 5
 
+    # An image reference only says which image was started. This asks the running DokuWiki itself,
+    # over HTTP, which release it is, and compares that against the literal Renovate bumps and the
+    # release tag is named after. Split rather than searched, so that pinning `2026-07-14` while
+    # `2026-07-14b` actually runs cannot pass.
+    - name: Query the version of the running DokuWiki
+      ansible.builtin.uri:
+        url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.getWikiVersion"
+        method: POST
+        body_format: json
+        body: {}
+        status_code: 200
+        return_content: true
+      register: dokuwiki_version_response
+
+    - name: Assert the running DokuWiki is the version this role installs
+      ansible.builtin.assert:
+        that:
+          - dokuwiki_version_response.json.error.code == 0
+          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_defaults.dokuwiki_version
+        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_defaults.dokuwiki_version }}"
+        success_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result }}"
+
     # `Restart=always` makes systemd report a crash-looping container as active, so the service
     # being active says very little on its own. Asked again now that the wiki has answered, a
     # container which cannot write to the bind-mounted data path, or which dies on a bad `env`
@@ -93,28 +115,6 @@
           The container runs {{ dokuwiki_container.Config.Image }} rather than the image that
           dokuwiki_version ({{ dokuwiki_defaults.dokuwiki_version }}) points at
         success_msg: "The container runs docker.io/dokuwiki/dokuwiki:{{ dokuwiki_defaults.dokuwiki_version }}"
-
-    # An image reference only says which image was started. This asks the running DokuWiki itself,
-    # over HTTP, which release it is, and compares that against the literal Renovate bumps and the
-    # release tag is named after. Split rather than searched, so that pinning `2026-07-14` while
-    # `2026-07-14b` actually runs cannot pass.
-    - name: Query the version of the running DokuWiki
-      ansible.builtin.uri:
-        url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.getWikiVersion"
-        method: POST
-        body_format: json
-        body: {}
-        status_code: 200
-        return_content: true
-      register: dokuwiki_version_response
-
-    - name: Assert the running DokuWiki is the version this role installs
-      ansible.builtin.assert:
-        that:
-          - dokuwiki_version_response.json.error.code == 0
-          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_defaults.dokuwiki_version
-        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_defaults.dokuwiki_version }}"
-        success_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result }}"
 
     # A DokuWiki that was never set up serves its start page just as happily, titled `DokuWiki`.
     # The seeded title can only come from the configuration below the role's data path.
