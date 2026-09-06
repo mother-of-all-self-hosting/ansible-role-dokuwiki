@@ -88,7 +88,7 @@
     - name: Inspect the DokuWiki container
       ansible.builtin.command:
         cmd: docker container inspect dokuwiki
-      register: dokuwiki_container_inspect
+      register: dokuwiki_container_raw
       changed_when: false
 
     - name: Inspect the image the role built
@@ -99,7 +99,7 @@
 
     - name: Keep the container's and the image's configuration around
       ansible.builtin.set_fact:
-        dokuwiki_container: "{{ dokuwiki_container_inspect.stdout | from_json | first }}"
+        dokuwiki_container: "{{ dokuwiki_container_raw.stdout | from_json | first }}"
         dokuwiki_image: "{{ dokuwiki_image_inspect.stdout | from_json | first }}"
 
     # A pulled image carries the digest it was pulled by; a locally built one has none. Together

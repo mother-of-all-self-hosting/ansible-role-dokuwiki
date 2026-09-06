@@ -100,12 +100,12 @@
     - name: Inspect the DokuWiki container
       ansible.builtin.command:
         cmd: docker container inspect dokuwiki
-      register: dokuwiki_container_inspect
+      register: dokuwiki_container_raw
       changed_when: false
 
     - name: Keep the DokuWiki container's configuration around
       ansible.builtin.set_fact:
-        dokuwiki_container: "{{ dokuwiki_container_inspect.stdout | from_json | first }}"
+        dokuwiki_container: "{{ dokuwiki_container_raw.stdout | from_json | first }}"
 
     - name: Assert the DokuWiki container runs the image the role points at
       ansible.builtin.assert:
