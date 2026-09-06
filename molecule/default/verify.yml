@@ -98,7 +98,7 @@
     # over HTTP, which release it is, and compares that against the literal Renovate bumps and the
     # release tag is named after. Split rather than searched, so that pinning `2026-07-14` while
     # `2026-07-14b` actually runs cannot pass.
-    - name: Ask the running DokuWiki for its version
+    - name: Query the version of the running DokuWiki
       ansible.builtin.uri:
         url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.getWikiVersion"
         method: POST

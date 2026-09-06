@@ -117,7 +117,7 @@
     # The whole point of this scenario. The packaging repository's Dockerfile defaults its
     # DOKUWIKI_VERSION build argument to `stable`, so without the role passing the pinned version
     # along, this reports whatever the newest DokuWiki release happens to be.
-    - name: Ask the self-built DokuWiki for its version
+    - name: Query the version of the running self-built DokuWiki
       ansible.builtin.uri:
         url: "{{ dokuwiki_molecule_jsonrpc_url }}/core.getWikiVersion"
         method: POST
