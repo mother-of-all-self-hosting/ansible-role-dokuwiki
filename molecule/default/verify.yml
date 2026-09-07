@@ -23,21 +23,27 @@
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
         name: dokuwiki_defaults
 
-    - name: Wait for the DokuWiki service to become active (up to 180s)
+    - name: Wait for the DokuWiki systemd service to become active (up to 180s)
       ansible.builtin.systemd_service:
         name: dokuwiki.service
       register: dokuwiki_service
       until: dokuwiki_service.status.ActiveState == 'active'
       retries: 36
       delay: 5
+      # So that giving up is reported by the assertion below rather than as a
+      # wall of systemd unit properties.
+      failed_when: false
 
-    - name: Assert the DokuWiki service is active
+    # `Restart=always` in the systemd unit means that even a container which crashes
+    # and gets restarted reads as active here, so this is a precondition rather than
+    # a result.
+    - name: Assert the DokuWiki systemd service is active
       ansible.builtin.assert:
         that: dokuwiki_service.status.ActiveState == 'active'
         fail_msg: "dokuwiki.service is not active ({{ dokuwiki_service.status.ActiveState }})"
         success_msg: "dokuwiki.service is active"
 
-    - name: Retrieve the DokuWiki service log for debugging
+    - name: Retrieve the DokuWiki systemd service log for debugging
       when: dokuwiki_debug_service_enabled | bool
       ansible.builtin.command:
         cmd: journalctl -xeu dokuwiki.service
