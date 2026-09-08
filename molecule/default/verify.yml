@@ -73,15 +73,15 @@
         body: {}
         status_code: 200
         return_content: true
-      register: dokuwiki_version_response
+      register: dokuwiki_version_reported
 
     - name: Assert the running DokuWiki is the version this role installs
       ansible.builtin.assert:
         that:
-          - dokuwiki_version_response.json.error.code == 0
-          - dokuwiki_version_response.json.result.split(' ')[1] == dokuwiki_defaults.dokuwiki_version
-        fail_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result | default('none') }}, expected {{ dokuwiki_defaults.dokuwiki_version }}"
-        success_msg: "DokuWiki reports {{ dokuwiki_version_response.json.result }}"
+          - dokuwiki_version_reported.json.error.code == 0
+          - dokuwiki_version_reported.json.result.split(' ')[1] == dokuwiki_defaults.dokuwiki_version
+        fail_msg: "DokuWiki reports {{ dokuwiki_version_reported.json.result | default('none') }}, expected {{ dokuwiki_defaults.dokuwiki_version }}"
+        success_msg: "DokuWiki reports {{ dokuwiki_version_reported.json.result }}"
 
     # `Restart=always` makes systemd report a crash-looping container as active, so the service
     # being active says very little on its own. Asked again now that the wiki has answered, a
@@ -261,5 +261,5 @@
         msg:
           - "DokuWiki systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
           - "DokuWiki image: {{ dokuwiki_container.Config.Image }}"
-          - "DokuWiki running DokuWiki: {{ dokuwiki_version_response.json.result }}"
+          - "DokuWiki running DokuWiki: {{ dokuwiki_version_reported.json.result }}"
           - "DokuWiki PHP settings from the role's env file: {{ dokuwiki_php_settings.stdout }}"
