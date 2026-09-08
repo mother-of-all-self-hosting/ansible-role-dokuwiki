@@ -46,7 +46,7 @@
     - name: Retrieve the DokuWiki systemd service log for debugging
       when: dokuwiki_debug_service_enabled | bool
       ansible.builtin.command:
-        cmd: journalctl -xeu dokuwiki.service
+        cmd: journalctl --no-pager --output=cat --unit=dokuwiki.service
       changed_when: false
 
     - name: Wait for the DokuWiki HTTP endpoint to answer (up to 5m)
