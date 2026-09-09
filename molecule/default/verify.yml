@@ -15,6 +15,8 @@
     dokuwiki_molecule_jsonrpc_url: http://127.0.0.1:8080/lib/exe/jsonrpc.php
 
   tasks:
+    - name: Verify that DokuWiki works
+      block:
     # The role is not included in this playbook, so its defaults are not in
     # scope. Reading defaults/main.yml directly ties the version assertion
     # below.
@@ -263,3 +265,19 @@
           - "DokuWiki image: {{ dokuwiki_container.Config.Image }}"
           - "DokuWiki running DokuWiki: {{ dokuwiki_version_reported.json.result }}"
           - "DokuWiki PHP settings from the role's env file: {{ dokuwiki_php_settings.stdout }}"
+
+      rescue:
+        # Whatever went wrong, the reason is almost always in the systemd service log.
+        - name: Retrieve the DokuWiki systemd service log
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=dokuwiki.service
+          register: dokuwiki_service_log
+          changed_when: false
+
+        - name: Show the DokuWiki systemd service log
+          ansible.builtin.debug:
+            var: dokuwiki_service_log.stdout_lines
+
+        - name: Fail because verification did not pass
+          ansible.builtin.fail:
+            msg: "DokuWiki verification failed. The systemd service log is printed above."
