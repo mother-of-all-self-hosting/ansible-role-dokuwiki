@@ -32,10 +32,6 @@
             file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
             name: dokuwiki_defaults
 
-        - name: Work out which image the role should have built
-          ansible.builtin.set_fact:
-            dokuwiki_expected_self_build_image: "dokuwiki/dokuwiki:{{ dokuwiki_defaults.dokuwiki_version }}-self-build"
-
         - name: Wait for the DokuWiki systemd service to become active (up to 180s)
           ansible.builtin.systemd_service:
             name: dokuwiki.service
@@ -98,6 +94,10 @@
             cmd: docker container inspect dokuwiki
           register: dokuwiki_container_raw
           changed_when: false
+
+        - name: Work out which image the role should have built
+          ansible.builtin.set_fact:
+            dokuwiki_expected_self_build_image: "dokuwiki/dokuwiki:{{ dokuwiki_defaults.dokuwiki_version }}-self-build"
 
         - name: Inspect the image the role built
           ansible.builtin.command:
