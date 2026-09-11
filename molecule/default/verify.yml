@@ -14,6 +14,9 @@
     dokuwiki_molecule_base_url: http://127.0.0.1:8080
     dokuwiki_molecule_jsonrpc_url: http://127.0.0.1:8080/lib/exe/jsonrpc.php
 
+    dokuwiki_verify_units:
+      - dokuwiki.service
+
   tasks:
     - name: Verify that DokuWiki works
       block:
@@ -25,13 +28,14 @@
             file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
             name: dokuwiki_defaults
 
-        - name: Wait for the DokuWiki systemd service to become active (up to 180s)
+        - name: Wait for the DokuWiki systemd services to become active (up to 180s each)
           ansible.builtin.systemd_service:
-            name: dokuwiki.service
-          register: dokuwiki_service
-          until: dokuwiki_service.status.ActiveState == 'active'
+            name: "{{ item }}"
+          register: dokuwiki_services
+          until: dokuwiki_services.status.ActiveState == 'active'
           retries: 36
           delay: 5
+          loop: "{{ dokuwiki_verify_units }}"
           # So that giving up is reported by the assertion below rather than as a
           # wall of systemd unit properties.
           failed_when: false
@@ -39,17 +43,20 @@
         # `Restart=always` in the systemd unit means that even a container which crashes
         # and gets restarted reads as active here, so this is a precondition rather than
         # a result.
-        - name: Assert the DokuWiki systemd service is active
+        - name: Assert the DokuWiki systemd services are active
           ansible.builtin.assert:
-            that: dokuwiki_service.status.ActiveState == 'active'
-            fail_msg: "dokuwiki.service is not active ({{ dokuwiki_service.status.ActiveState }})"
-            success_msg: "dokuwiki.service is active"
+            that: dokuwiki_services.results | map(attribute='status.ActiveState') | unique | list == ['active']
+            fail_msg: >-
+              Not every service is active:
+              {{ dict(dokuwiki_verify_units | zip(dokuwiki_services.results | map(attribute='status.ActiveState'))) }}
+            success_msg: "Every systemd service is active"
 
-        - name: Retrieve the DokuWiki systemd service log for debugging
+        - name: Retrieve the DokuWiki systemd services log for debugging
           when: dokuwiki_debug_service_enabled | bool
           ansible.builtin.command:
-            cmd: journalctl --no-pager --output=cat --unit=dokuwiki.service
+            cmd: "journalctl --no-pager --output=cat --unit={{ item }}"
           changed_when: false
+          loop: "{{ dokuwiki_verify_units }}"
 
         - name: Wait for the DokuWiki HTTP endpoint to answer (up to 5m)
           ansible.builtin.uri:
