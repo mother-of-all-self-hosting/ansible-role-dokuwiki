@@ -28,7 +28,7 @@ dokuwiki_data_path: "{{ dokuwiki_base_path }}/data"
 # and considers them mutually compatible.
 #
 # renovate: datasource=docker depName=dokuwiki/dokuwiki versioning=loose
-dokuwiki_version: 2026-07-14b
+dokuwiki_version: 2026-07-14c
 
 dokuwiki_uid: ""
 dokuwiki_gid: ""
