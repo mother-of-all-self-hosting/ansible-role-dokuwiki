@@ -77,25 +77,6 @@
           retries: 60
           delay: 5
 
-        # `Restart=always` makes systemd report a crash-looping container as active, so the service
-        # being active says very little on its own. Asked again now that the wiki has answered, a
-        # self-built image which cannot serve the storage layout has had time to show up here.
-        - name: Re-read the DokuWiki service state now that the wiki has answered
-          ansible.builtin.systemd_service:
-            name: dokuwiki.service
-          register: dokuwiki_service_settled
-
-        - name: Assert the DokuWiki service has not been restarting
-          ansible.builtin.assert:
-            that:
-              - dokuwiki_service_settled.status.ActiveState == 'active'
-              - dokuwiki_service_settled.status.NRestarts | int == 0
-            fail_msg: >-
-              dokuwiki.service is {{ dokuwiki_service_settled.status.ActiveState }} after
-              {{ dokuwiki_service_settled.status.NRestarts }} restart(s), which means the self-built
-              container is not staying up
-            success_msg: "dokuwiki.service is active and has not needed a restart"
-
         - name: Inspect the DokuWiki container
           ansible.builtin.command:
             cmd: docker container inspect dokuwiki
@@ -161,10 +142,50 @@
               image is not reading the configuration below {{ dokuwiki_data_path }}
             success_msg: "The self-built DokuWiki serves the wiki seeded below {{ dokuwiki_data_path }}"
 
+        - name: Verify nothing was quietly restarting while all of that was being checked
+          when: "dokuwiki_restarts_check_enabled | bool"
+          block:
+            # `Restart=always` means the unit reads `active` while it is crash-looping,
+            # so `active` on its own says very little. The window has to be watched with
+            # everything already answering.
+            - name: Sample the restart counters
+              ansible.builtin.systemd_service:
+                name: "{{ item }}"
+              register: dokuwiki_restarts_before
+              loop: "{{ dokuwiki_verify_units }}"
+
+            # Comfortably longer than the unit's `RestartSec=30`, so a crash loop has to
+            # tick at least once inside the window.
+            - name: Watch the services for 45 seconds
+              ansible.builtin.pause:
+                seconds: 45
+
+            - name: Sample the restart counters again
+              ansible.builtin.systemd_service:
+                name: "{{ item }}"
+              register: dokuwiki_restarts_after
+              loop: "{{ dokuwiki_verify_units }}"
+
+            - name: Assert no service restarted while it was up
+              ansible.builtin.assert:
+                that:
+                  - dokuwiki_restarts_after.results | map(attribute='status.NRestarts') | list == dokuwiki_restarts_before.results | map(attribute='status.NRestarts') | list
+                  - dokuwiki_restarts_after.results | map(attribute='status.ActiveState') | unique | list == ['active']
+                fail_msg: >-
+                  A service restarted while it was supposedly up, so `active` was hiding a crash loop.
+                  Before:
+                  {% for unit, restarts in dokuwiki_verify_units | zip(dokuwiki_restarts_before.results | map(attribute='status.NRestarts')) %}{{ restarts }} ({{ unit }}){% if not loop.last %}, {% endif %}{% endfor %},
+                  after:
+                  {% for unit, restarts in dokuwiki_verify_units | zip(dokuwiki_restarts_after.results | map(attribute='status.NRestarts')) %}{{ restarts }} ({{ unit }}){% if not loop.last %}, {% endif %}{% endfor %}
+                success_msg: >-
+                  None of the services restarted over 45 seconds of watching (restarts so far:
+                  {% for unit, restarts in dokuwiki_verify_units | zip(dokuwiki_restarts_after.results | map(attribute='status.NRestarts')) %}{{ restarts }} ({{ unit }}){% if not loop.last %}, {% endif %}{% endfor %})
+
         - name: Show the DokuWiki verification summary
           ansible.builtin.debug:
             msg:
-              - "DokuWiki systemd: {{ dokuwiki_service_settled.status.ActiveState }}, {{ dokuwiki_service_settled.status.NRestarts }} restart(s)"
+              - "DokuWiki systemd: {% for unit, state in dokuwiki_verify_units | zip(dokuwiki_server_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
+              - "DokuWiki server restarts: {% for unit, restarts in dokuwiki_verify_units | zip(dokuwiki_restarts_after.results | map(attribute='status.NRestarts')) %}{{ restarts }} ({{ unit }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "DokuWiki built image: {{ dokuwiki_container.Config.Image }}"
               - "DokuWiki self-built DokuWiki: {{ dokuwiki_version_reported.json.result }}"
 

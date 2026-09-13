@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Slavi Pantaleev
-# SPDX-FileCopyrightText: 2026 Suguru Hirahara
 # SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -31,6 +31,7 @@ provisioner:
       all:
         # Helper variables
         dokuwiki_debug_service_enabled: false
+        dokuwiki_restarts_check_enabled: true
 
         # prepare.yml seeds files into the role's data path before the role has ever run, so it
         # needs that path spelled out. The role derives it through Jinja, which cannot be read
