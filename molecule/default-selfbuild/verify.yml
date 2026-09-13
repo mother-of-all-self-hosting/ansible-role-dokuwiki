@@ -184,7 +184,7 @@
         - name: Show the DokuWiki verification summary
           ansible.builtin.debug:
             msg:
-              - "DokuWiki systemd: {% for unit, state in dokuwiki_verify_units | zip(dokuwiki_server_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
+              - "DokuWiki systemd: {% for unit, state in dokuwiki_verify_units | zip(dokuwiki_verify_units.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "DokuWiki server restarts: {% for unit, restarts in dokuwiki_verify_units | zip(dokuwiki_restarts_after.results | map(attribute='status.NRestarts')) %}{{ restarts }} ({{ unit }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "DokuWiki built image: {{ dokuwiki_container.Config.Image }}"
               - "DokuWiki self-built DokuWiki: {{ dokuwiki_version_reported.json.result }}"
