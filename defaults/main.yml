@@ -167,6 +167,12 @@ dokuwiki_container_extra_arguments: "{{ dokuwiki_container_extra_arguments_auto 
 dokuwiki_container_extra_arguments_auto: []
 dokuwiki_container_extra_arguments_custom: []
 
+# A list of extra arguments to pass to the process inside the container
+# Example: ['--SOME_ARGUMENT']
+dokuwiki_process_extra_arguments: "{{ dokuwiki_process_extra_arguments_auto + dokuwiki_process_extra_arguments_custom }}"
+dokuwiki_process_extra_arguments_auto: []
+dokuwiki_process_extra_arguments_custom: []
+
 # Specifies the value of the `X-XSS-Protection` header
 # Stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
 #
