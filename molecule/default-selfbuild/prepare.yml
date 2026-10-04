@@ -25,9 +25,6 @@
     - name: Ensure Docker is installed for DokuWiki Molecule tests preparation
       ansible.builtin.include_role:
         name: ansible-role-docker
-      vars:
-        docker_daemon_options:
-          storage-driver: vfs
 
 # DokuWiki keeps no database: its configuration and its pages are plain files below the path that
 # this role bind-mounts into the container. A DokuWiki which has never been through `install.php`
