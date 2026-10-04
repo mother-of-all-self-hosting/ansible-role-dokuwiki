@@ -98,13 +98,15 @@
             dokuwiki_container: "{{ dokuwiki_container_raw.stdout | from_json | first }}"
             dokuwiki_image: "{{ dokuwiki_image_raw.stdout | from_json | first }}"
 
-        # A pulled image carries the digest it was pulled by; a locally built one has none. Together
-        # with the image name, which no registry serves, this says the role really built it.
+        # A pulled image carries the time upstream built it; a locally built one was created during
+        # this test run. Together with the image name, which no registry serves, this says the role
+        # really built it. Repository digests cannot tell the two apart: Docker's containerd image
+        # store records one for local builds too.
         - name: Assert the container runs an image that was built here, not pulled
           ansible.builtin.assert:
             that:
               - dokuwiki_container.Config.Image == dokuwiki_expected_self_build_image
-              - dokuwiki_image.RepoDigests | length == 0
+              - (now(utc=true) - (dokuwiki_image.Created[:19] | to_datetime('%Y-%m-%dT%H:%M:%S'))).total_seconds() < 3600
             fail_msg: >-
               The container runs {{ dokuwiki_container.Config.Image }} rather than a locally built
               {{ dokuwiki_expected_self_build_image }}
