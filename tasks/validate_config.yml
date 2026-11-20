@@ -25,9 +25,6 @@
   with_items:
     - dokuwiki_uid
     - dokuwiki_gid
-    - dokuwiki_hostname
-    - dokuwiki_path_prefix
-    - dokuwiki_container_network
 
 - name: Run if Traefik is enabled
   when: dokuwiki_container_labels_traefik_enabled | bool
